@@ -3,7 +3,6 @@ import { createServerSupabase } from "@/lib/supabase/server";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-  const sb = createServerSupabase();
 
   const staticPages: MetadataRoute.Sitemap = [
     { url: base, changeFrequency: "daily", priority: 1 },
@@ -12,6 +11,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   try {
+    const sb = createServerSupabase();
     const { data } = await sb
       .from("products")
       .select("slug, updated_at")
