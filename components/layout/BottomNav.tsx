@@ -18,7 +18,7 @@ export default function BottomNav() {
   if (hide) return null;
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-[480px] border-t border-line bg-white pb-[env(safe-area-inset-bottom)]">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white pb-[env(safe-area-inset-bottom)] md:hidden">
       <div className="grid grid-cols-4">
         {TABS.map(({ href, label, icon: Icon }) => {
           const active =

@@ -13,7 +13,7 @@ export default function ProductCard({
   return (
     <Link
       href={`/products/${product.slug}`}
-      className={`group block ${horizontal ? "w-[260px] shrink-0" : ""}`}
+      className={`group block ${horizontal ? "w-[260px] shrink-0 md:w-auto" : ""}`}
     >
       <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-canvas">
         {product.thumbnail_url ? (
@@ -21,8 +21,12 @@ export default function ProductCard({
             src={product.thumbnail_url}
             alt={product.title}
             fill
-            sizes="(max-width: 480px) 100vw, 480px"
-            className="object-cover transition-transform duration-300 group-active:scale-[1.03]"
+            sizes={
+              horizontal
+                ? "(max-width: 767px) 260px, (max-width: 1279px) 33vw, 380px"
+                : "(max-width: 639px) 100vw, (max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 300px"
+            }
+            className="object-cover transition-transform duration-300 group-hover:scale-[1.04] group-active:scale-[1.03]"
           />
         ) : (
           <div className="flex h-full items-center justify-center text-faint">
@@ -44,7 +48,7 @@ export default function ProductCard({
             {product.category.name}
           </p>
         )}
-        <h3 className="mt-0.5 line-clamp-2 text-[15px] font-bold leading-snug">
+        <h3 className="mt-0.5 line-clamp-2 text-[15px] font-bold leading-snug group-hover:text-primary">
           {product.title}
         </h3>
         {product.summary && !horizontal && (

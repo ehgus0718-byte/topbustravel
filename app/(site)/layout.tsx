@@ -18,9 +18,9 @@ export default async function SiteLayout({
   const tel = settings.tel || "042-000-0000";
 
   return (
-    <div className="mx-auto min-h-dvh max-w-[480px] bg-white shadow-[0_0_40px_rgba(25,31,40,0.08)]">
+    <div className="flex min-h-dvh flex-col bg-white">
       <Header tel={tel} />
-      <main className="min-h-[70dvh]">{children}</main>
+      <main className="min-h-[70dvh] flex-1">{children}</main>
       <Footer tel={tel} companyInfo={settings.company_info || ""} />
       <BottomNav />
     </div>
