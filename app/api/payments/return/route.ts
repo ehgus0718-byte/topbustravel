@@ -182,11 +182,46 @@ export async function POST(req: Request) {
     }
 
     // ── 8) 예약 확정 SMS (실패해도 결제 흐름은 성공 처리) ─────────────
-    // ⚠️ 컬럼명 확인: reservation.name / reservation.phone 이 실제 스키마와 다르면 수정
-    if (reservation.phone) {
+    if (reservation.customer_phone) {
+      // 상품명/출발일 조회 — SMS 표시용이므로 실패해도 발송은 계속 진행
+      let productTitle: string | null = null;
+      let departureDate: string | null = null;
+      try {
+        if (reservation.product_id) {
+          const { data: product } = await sb
+            .from("products")
+            .select("title")
+            .eq("id", reservation.product_id)
+            .maybeSingle();
+          productTitle = product?.title ?? null;
+        }
+        if (reservation.departure_id) {
+          const { data: departure } = await sb
+            .from("departures")
+            .select("departure_date")
+            .eq("id", reservation.departure_id)
+            .maybeSingle();
+          departureDate = departure?.departure_date ?? null;
+        }
+      } catch (e) {
+        console.error("[payments/return] SMS용 상품/출발일 조회 실패", { orderId, e });
+      }
+
+      // 인원: 0인 항목은 생략 (예: "성인2 아동1")
+      const people = [
+        reservation.adult_count > 0 ? `성인${reservation.adult_count}` : null,
+        reservation.child_count > 0 ? `아동${reservation.child_count}` : null,
+        reservation.infant_count > 0 ? `유아${reservation.infant_count}` : null,
+      ]
+        .filter(Boolean)
+        .join(" ");
+
       const smsText = [
         `[topBustravel] 예약이 확정되었습니다.`,
-        reservation.name ? `예약자: ${reservation.name}` : null,
+        productTitle ? `상품: ${productTitle}` : null,
+        departureDate ? `출발일: ${departureDate}` : null,
+        people ? `인원: ${people}` : null,
+        reservation.customer_name ? `예약자: ${reservation.customer_name}` : null,
         `결제금액: ${reservation.total_amount.toLocaleString()}원`,
         `예약번호: ${String(orderId).slice(0, 8).toUpperCase()}`,
         `문의: 소망투어`,
@@ -194,7 +229,7 @@ export async function POST(req: Request) {
         .filter(Boolean)
         .join("\n");
 
-      const smsResult = await sendSms(reservation.phone, smsText);
+      const smsResult = await sendSms(reservation.customer_phone, smsText);
       if (!smsResult.ok) {
         console.error("[payments/return] SMS 발송 실패", { orderId, smsResult });
       }
