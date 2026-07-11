@@ -11,6 +11,11 @@ export const metadata: Metadata = {
   },
   description:
     "전세버스 국내 여행 전문 topBustravel. 당일여행부터 1박2일까지, 탑승지 선택하고 간편하게 예약하세요.",
+  verification: {
+    other: {
+      "naver-site-verification": "99a25b0370da6bc93f94749a619c1b346317bd31",
+    },
+  },
   openGraph: {
     type: "website",
     locale: "ko_KR",
