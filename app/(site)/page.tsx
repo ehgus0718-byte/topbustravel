@@ -27,12 +27,12 @@ export default async function HomePage() {
         <div className="relative mx-auto max-w-6xl px-5 pb-10 pt-9 md:px-6 md:pb-24 md:pt-20">
           <RouteDeco />
           <p className="relative text-[13px] font-semibold text-white/80 md:text-base">
-            전세버스 국내여행 전문
+            전세버스 국내여행 전문 여행사
           </p>
           <h1 className="relative mt-1.5 text-[26px] font-extrabold leading-tight md:mt-3 md:text-5xl">
-            버스 타고 떠나는
+            대전·세종에서 출발하는
             <br />
-            가장 쉬운 여행
+            가장 쉬운 버스여행
           </h1>
           <p className="relative mt-2.5 text-[14px] leading-relaxed text-white/85 md:mt-4 md:text-lg">
             집 근처 탑승지에서 타면, 나머지는 저희가 할게요.
@@ -70,8 +70,8 @@ export default async function HomePage() {
         )}
 
         {/* 전체 상품 */}
-        <section className="pb-8 pt-4 md:pb-20 md:pt-10">
-          <SectionTitle title="여행상품" href="/products" />
+        <section className="pb-8 pt-4 md:pb-16 md:pt-8">
+          <SectionTitle title="대전·세종 출발 국내 여행상품" href="/products" />
           {latest.length === 0 ? (
             <p className="px-4 py-10 text-center text-sm text-faint md:px-0">
               등록된 상품이 없습니다. 관리자 페이지에서 상품을 등록해 주세요.
@@ -83,6 +83,25 @@ export default async function HomePage() {
               ))}
             </div>
           )}
+        </section>
+
+        {/* 소개문 (SEO) */}
+        <section className="border-t border-line px-4 pb-10 pt-8 md:px-0 md:pb-16 md:pt-10">
+          <h2 className="text-[16px] font-extrabold md:text-lg">
+            탑버스트래블이 준비하는 버스여행
+          </h2>
+          <p className="mt-3 max-w-3xl text-[13px] leading-relaxed text-sub md:text-[14px]">
+            탑버스트래블은 대전과 세종, 충청권에서 출발하는 전세버스 여행 전문
+            여행사입니다. 서산·당진 같은 서해안 당일여행부터 강원도·남도 1박2일
+            코스, 벚꽃과 단풍 시즌 테마여행까지 — 코스 설계, 차량, 기사님, 식사
+            예약을 한 번에 준비해 드립니다. 가족여행과 효도여행은 물론 학교 MT,
+            기업 워크숍 같은{" "}
+            <Link href="/contact" className="font-semibold text-primary underline-offset-2 hover:underline">
+              단체여행 견적
+            </Link>
+            도 상담해 드립니다. 집 근처 탑승지에서 편하게 타고, 여행만 즐기다
+            오세요.
+          </p>
         </section>
       </div>
     </div>
