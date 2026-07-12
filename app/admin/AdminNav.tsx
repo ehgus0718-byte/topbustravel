@@ -9,6 +9,8 @@ const MENU = [
   { href: "/admin/reservations", label: "예약" },
   { href: "/admin/users", label: "회원" },
   { href: "/admin/reviews", label: "리뷰" },
+  { href: "/admin/notices", label: "공지" },
+  { href: "/admin/events", label: "이벤트" },
   { href: "/admin/inquiries", label: "문의" },
   { href: "/admin/settings", label: "설정" },
 ];
