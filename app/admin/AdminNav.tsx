@@ -7,6 +7,7 @@ const MENU = [
   { href: "/admin/products", label: "상품" },
   { href: "/admin/departures", label: "출발일" },
   { href: "/admin/reservations", label: "예약" },
+  { href: "/admin/users", label: "회원" },
   { href: "/admin/reviews", label: "리뷰" },
   { href: "/admin/inquiries", label: "문의" },
   { href: "/admin/settings", label: "설정" },
