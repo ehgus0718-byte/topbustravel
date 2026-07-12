@@ -1,16 +1,49 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import Script from "next/script";
 import type { Departure, ProductDetail } from "@/types";
 import { won, fmtDate, formatPhone } from "@/lib/format";
 
+/**
+ * 나이스페이 구모듈(웹표준 결제창) 연동 — 대전빵버스 검증 패턴 이식
+ * - 스크립트: pg-web.nicepay.co.kr/v3/common/js/nicepay-pgweb.js
+ * - PC: goPay() 레이어 → 인증 완료 시 nicepaySubmit() → 폼을 ReturnURL로 전체 페이지 POST
+ * - 모바일: goPay()가 모바일 결제 페이지로 이동 → 나이스페이가 ReturnURL로 직접 POST
+ * - 서명(SignData)은 서버(/api/reservations)에서 생성 (상점키는 서버에만 존재)
+ */
+
 declare global {
   interface Window {
-    AUTHNICE?: {
-      requestPay: (opts: Record<string, unknown>) => void;
-    };
+    goPay?: (form: HTMLFormElement) => void;
+    nicepaySubmit?: () => void;
+    nicepayClose?: () => void;
+    deleteLayer?: () => void;
   }
+}
+
+function loadNicepayScript(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (document.getElementById("nicepay-script")) {
+      resolve();
+      return;
+    }
+    const s = document.createElement("script");
+    s.id = "nicepay-script";
+    s.src = "https://pg-web.nicepay.co.kr/v3/common/js/nicepay-pgweb.js";
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error("script load failed"));
+    document.head.appendChild(s);
+  });
+}
+
+function isMobileDevice() {
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+}
+
+function safeRemove(el: HTMLElement | null) {
+  try {
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+  } catch {}
 }
 
 export default function ReserveClient({
@@ -33,6 +66,11 @@ export default function ReserveClient({
   const [payMethod, setPayMethod] = useState<"card" | "bank">("card");
   const [agreed, setAgreed] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  // 결제 모듈 미리 로드 (빵버스 패턴)
+  useEffect(() => {
+    loadNicepayScript().catch(() => {});
+  }, []);
 
   const prices = {
     adult: departure.adult_price ?? product.base_price,
@@ -60,7 +98,7 @@ export default function ReserveClient({
 
     setBusy(true);
     try {
-      // 1) 서버에서 pending 예약 생성 (금액은 서버가 DB 기준으로 재계산)
+      // 1) 서버에서 pending 예약 생성 + 결제창 서명 파라미터 수신
       const res = await fetch("/api/reservations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -85,24 +123,76 @@ export default function ReserveClient({
         return;
       }
 
-      // 2-b) 카드: 나이스페이 결제창 (orderId = 예약 UUID = Moid)
-      if (!window.AUTHNICE) {
+      // 2-b) 카드: 나이스페이 구모듈 결제창 (Moid = 예약 UUID)
+      try {
+        await loadNicepayScript();
+      } catch {
         throw new Error("결제 모듈을 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.");
       }
-      window.AUTHNICE.requestPay({
-        clientId: data.clientId,
-        method: "card",
-        orderId: data.id,
-        amount: data.amount,
-        goodsName: data.goodsName,
-        buyerName: name.trim(),
-        buyerTel: phone.replace(/\D/g, ""),
-        returnUrl: `${window.location.origin}/api/payments/return`,
-        fnError: (result: { errorMsg?: string }) => {
-          alert(result?.errorMsg || "결제 요청에 실패했습니다.");
-          setBusy(false);
-        },
+      if (typeof window.goPay !== "function") {
+        throw new Error("결제 모듈을 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.");
+      }
+
+      const formEl = document.createElement("form");
+      formEl.name = "nicepayForm";
+      formEl.method = "post";
+      formEl.acceptCharset = "euc-kr";
+      formEl.style.display = "none";
+      formEl.action = data.returnUrl; // 인증 결과를 받을 곳 (PC/모바일 공통)
+
+      const fields: Record<string, string> = {
+        PayMethod: "CARD",
+        GoodsName: data.goodsName,
+        Amt: data.amt,
+        MID: data.mid,
+        Moid: data.id,
+        BuyerName: name.trim(),
+        BuyerTel: phone.replace(/\D/g, ""),
+        EdiDate: data.ediDate,
+        SignData: data.signData,
+        CharSet: "utf-8",
+        GoodsCl: "1",
+        TransType: "0",
+        ReturnURL: data.returnUrl,
+      };
+      Object.entries(fields).forEach(([k, v]) => {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = k;
+        input.value = v;
+        formEl.appendChild(input);
       });
+      document.body.appendChild(formEl);
+
+      // PC: 인증 완료 시 SDK가 폼에 인증 결과를 채운 뒤 호출 → 그대로 서버로 전체 페이지 POST
+      window.nicepaySubmit = function () {
+        window.deleteLayer?.();
+        delete window.nicepaySubmit;
+        delete window.nicepayClose;
+        formEl.submit(); // → /api/payments/return (서버 승인 후 완료/실패 페이지로 303)
+      };
+
+      // PC: 결제창 닫힘/취소
+      window.nicepayClose = function () {
+        window.deleteLayer?.();
+        safeRemove(formEl);
+        delete window.nicepaySubmit;
+        delete window.nicepayClose;
+        setBusy(false);
+        alert("결제가 취소되었습니다.");
+      };
+
+      try {
+        window.goPay(formEl); // PC: 레이어 / 모바일: 결제 페이지로 이동
+      } catch {
+        safeRemove(formEl);
+        throw new Error("결제창 호출에 실패했습니다. 팝업 차단을 해제해 주세요.");
+      }
+
+      // 모바일은 페이지가 이동하므로 busy 상태 유지 (이동 실패 대비 15초 후 해제)
+      if (isMobileDevice()) {
+        setTimeout(() => setBusy(false), 15000);
+      }
     } catch (e: any) {
       alert(e.message || "오류가 발생했습니다.");
       setBusy(false);
@@ -111,8 +201,6 @@ export default function ReserveClient({
 
   return (
     <div className="pb-32">
-      <Script src="https://pay.nicepay.co.kr/v1/js/" strategy="afterInteractive" />
-
       <div className="px-4 pt-5">
         <h1 className="text-[20px] font-extrabold">예약하기</h1>
       </div>

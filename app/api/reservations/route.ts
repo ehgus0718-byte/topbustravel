@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server";
 import { createAdminSupabase } from "@/lib/supabase/admin";
+import { NICEPAY_MID, getEdiDate, buildAuthSign } from "@/lib/nicepay";
 
 /**
- * POST /api/reservations — pending 예약 생성
+ * POST /api/reservations — pending 예약 생성 + 나이스페이 구모듈 결제창 파라미터 응답
  *
  * 대전빵버스에서 검증한 "pending reservation" 패턴:
  * 1) 결제 전에 DB에 예약 레코드를 먼저 생성
- * 2) 예약 UUID를 나이스페이 orderId(Moid)로 사용
+ * 2) 예약 UUID를 나이스페이 Moid로 사용
  * 3) 결제 return에서 UUID로 저장된 데이터를 조회 (PG 파라미터에 의존하지 않음)
  *
  * 금액은 클라이언트 값을 신뢰하지 않고 DB 가격 기준으로 서버에서 재계산.
+ * SignData(sha256(EdiDate+MID+Amt+상점키))는 상점키가 필요하므로 반드시 서버에서 생성.
  */
 export async function POST(req: Request) {
   try {
@@ -89,11 +91,26 @@ export async function POST(req: Request) {
     // GoodsName에 출발일 포함 (SMS/관리에서 날짜 식별 용이 — 빵버스 교훈)
     const goodsName = `${p.title} (${dep.departure_date})`.slice(0, 40);
 
+    // 무통장이면 결제 파라미터 불필요
+    if (payment_method === "bank") {
+      return NextResponse.json({ id: reservation.id, amount: total, goodsName });
+    }
+
+    // ── 나이스페이 구모듈 결제창 파라미터 (서명은 서버에서만 생성) ──
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://topbustravel.com";
+    const amt = String(total);
+    const ediDate = getEdiDate();
+
     return NextResponse.json({
       id: reservation.id,
       amount: total,
       goodsName,
-      clientId: process.env.NICEPAY_CLIENT_ID ?? "",
+      // 결제창 폼 필드
+      mid: NICEPAY_MID,
+      amt,
+      ediDate,
+      signData: buildAuthSign(ediDate, amt),
+      returnUrl: `${siteUrl}/api/payments/return`,
     });
   } catch (e: any) {
     console.error("[reservations POST]", e);
