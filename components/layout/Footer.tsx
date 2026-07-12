@@ -32,6 +32,12 @@ export default function Footer({
               (평일 09:00 ~ 18:00)
             </p>
             <p className="mt-2 space-x-3">
+              <Link href="/notices" className="underline-offset-2 hover:underline">
+                공지사항
+              </Link>
+              <Link href="/events" className="underline-offset-2 hover:underline">
+                이벤트
+              </Link>
               <Link href="/faq" className="underline-offset-2 hover:underline">
                 자주 묻는 질문
               </Link>
