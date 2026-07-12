@@ -1,23 +1,37 @@
 "use client";
 import { useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import type { Review } from "@/types";
-import { fmtDateTime } from "@/lib/format";
+import { fmtDateTime, maskName } from "@/lib/format";
 
 export default function ReviewList({
   productId,
   reviews,
+  user,
 }: {
   productId: string;
   reviews: Review[];
+  user?: { name: string } | null;
 }) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ author_name: "", rating: 5, content: "" });
+  const [form, setForm] = useState({ rating: 5, content: "" });
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  const openForm = () => {
+    if (!user) {
+      // 비로그인 시 작성 버튼을 누르면 로그인으로 안내 (백엔드에서도 재검증됨)
+      router.push(`/login?next=${encodeURIComponent(pathname)}`);
+      return;
+    }
+    setOpen(true);
+  };
+
   const submit = async () => {
-    if (!form.author_name.trim() || !form.content.trim()) {
-      alert("이름과 내용을 입력해 주세요.");
+    if (!form.content.trim()) {
+      alert("내용을 입력해 주세요.");
       return;
     }
     setBusy(true);
@@ -27,6 +41,10 @@ export default function ReviewList({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ product_id: productId, ...form }),
       });
+      if (res.status === 401) {
+        router.push(`/login?next=${encodeURIComponent(pathname)}`);
+        return;
+      }
       if (!res.ok) throw new Error();
       setSent(true);
       setOpen(false);
@@ -69,12 +87,9 @@ export default function ReviewList({
         </p>
       ) : open ? (
         <div className="mt-4 rounded-2xl border border-line p-4">
-          <input
-            value={form.author_name}
-            onChange={(e) => setForm({ ...form, author_name: e.target.value })}
-            placeholder="이름 (예: 김*희)"
-            className="w-full rounded-xl border border-line px-3.5 py-2.5 text-[14px] outline-none focus:border-primary"
-          />
+          <p className="text-[13px] font-semibold text-sub">
+            {maskName(user?.name || "")}님 이름으로 등록됩니다
+          </p>
           <div className="mt-2.5 flex items-center gap-1">
             {[1, 2, 3, 4, 5].map((n) => (
               <button
@@ -112,10 +127,10 @@ export default function ReviewList({
         </div>
       ) : (
         <button
-          onClick={() => setOpen(true)}
+          onClick={openForm}
           className="mt-4 h-11 w-full rounded-xl border border-line text-[14px] font-semibold text-sub active:bg-canvas"
         >
-          후기 작성하기
+          {user ? "후기 작성하기" : "로그인하고 후기 작성하기"}
         </button>
       )}
     </div>

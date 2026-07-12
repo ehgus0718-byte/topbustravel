@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { NICEPAY_MID, getEdiDate, buildAuthSign } from "@/lib/nicepay";
+import { getSessionUser } from "@/lib/session";
 
 /**
  * POST /api/reservations — pending 예약 생성 + 나이스페이 구모듈 결제창 파라미터 응답
+ *
+ * 로그인 필수: 프론트(예약 페이지)에서도 막지만, 여기서도 세션을 검증해
+ * API를 직접 호출하는 우회 결제 시도를 차단한다.
  *
  * 대전빵버스에서 검증한 "pending reservation" 패턴:
  * 1) 결제 전에 DB에 예약 레코드를 먼저 생성
@@ -14,6 +18,11 @@ import { NICEPAY_MID, getEdiDate, buildAuthSign } from "@/lib/nicepay";
  * SignData(sha256(EdiDate+MID+Amt+상점키))는 상점키가 필요하므로 반드시 서버에서 생성.
  */
 export async function POST(req: Request) {
+  const user = await getSessionUser();
+  if (!user) {
+    return NextResponse.json({ error: "로그인 후 예약할 수 있습니다." }, { status: 401 });
+  }
+
   try {
     const body = await req.json();
     const {
@@ -68,6 +77,8 @@ export async function POST(req: Request) {
     const total =
       adult_count * adultPrice + child_count * childPrice + infant_count * infantPrice;
 
+    // 참고: reservations 테이블에 customer_id 컬럼은 없음(현재 스키마 기준).
+    // 마이페이지 예약 내역은 customer_phone으로 매칭되는 기존 방식을 그대로 사용.
     const { data: reservation, error: insErr } = await sb
       .from("reservations")
       .insert({

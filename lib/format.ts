@@ -28,6 +28,15 @@ export function formatPhone(v: string): string {
   return `${d.slice(0, 3)}-${d.slice(3, 7)}-${d.slice(7)}`;
 }
 
+// "홍길동" -> "홍*동", "김수" -> "김*", "이" -> "이"
+// 리뷰 작성자 표기 등 회원 실명을 그대로 노출하지 않을 때 사용
+export function maskName(name: string): string {
+  const s = name.trim();
+  if (s.length <= 1) return s;
+  if (s.length === 2) return `${s[0]}*`;
+  return `${s[0]}${"*".repeat(s.length - 2)}${s[s.length - 1]}`;
+}
+
 export const STATUS_LABEL: Record<string, string> = {
   pending: "결제대기",
   paid: "결제완료",

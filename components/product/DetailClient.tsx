@@ -20,10 +20,12 @@ export default function DetailClient({
   product,
   tel,
   kakaoUrl,
+  user,
 }: {
   product: ProductDetail;
   tel: string;
   kakaoUrl: string;
+  user?: { name: string } | null;
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState<Departure | null>(null);
@@ -44,7 +46,13 @@ export default function DetailClient({
       setTimeout(() => setPulse(false), 2000);
       return;
     }
-    router.push(`/reserve/${product.slug}?date=${selected.departure_date}`);
+    const target = `/reserve/${product.slug}?date=${selected.departure_date}`;
+    // 비회원이면 예약 페이지 대신 로그인으로 안내 (서버에서도 동일하게 재차 검증됨)
+    if (!user) {
+      router.push(`/login?next=${encodeURIComponent(target)}`);
+      return;
+    }
+    router.push(target);
   };
 
   const scrollTo = (id: string) => {
@@ -222,7 +230,7 @@ export default function DetailClient({
             </span>
           )}
         </h2>
-        <ReviewList productId={product.id} reviews={product.reviews} />
+        <ReviewList productId={product.id} reviews={product.reviews} user={user} />
       </section>
 
       {/* 스티키 하단 CTA */}

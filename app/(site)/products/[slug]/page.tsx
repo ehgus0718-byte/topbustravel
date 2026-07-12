@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getProductBySlug } from "@/lib/api/products";
 import { getSettings } from "@/lib/api/settings";
+import { getSessionUser } from "@/lib/session";
 import DetailClient from "@/components/product/DetailClient";
 
 export const dynamic = "force-dynamic";
@@ -34,6 +35,7 @@ export default async function ProductDetailPage({ params }: Props) {
 
   let product = null;
   let settings: Record<string, string> = {};
+  const user = await getSessionUser();
   try {
     [product, settings] = await Promise.all([
       getProductBySlug(sb, slug),
@@ -77,6 +79,7 @@ export default async function ProductDetailPage({ params }: Props) {
         product={product}
         tel={settings.tel || "042-000-0000"}
         kakaoUrl={settings.kakao_url || "#"}
+        user={user ? { name: user.name } : null}
       />
     </>
   );
