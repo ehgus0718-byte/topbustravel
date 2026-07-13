@@ -21,6 +21,24 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url, 301);
   }
 
+  // HTTP → HTTPS 강제 리다이렉트
+  // 환경변수 FORCE_HTTPS=1 일 때만 동작. (문제 발생 시 환경변수 삭제만으로 즉시 원복)
+  // x-forwarded-proto는 프록시에 따라 "https,http"처럼 콤마로 올 수 있어 첫 값만 사용.
+  // 헤더가 없으면 판단 불가이므로 리다이렉트하지 않음 (무한 루프 방어).
+  if (process.env.FORCE_HTTPS === "1") {
+    const proto = (req.headers.get("x-forwarded-proto") || "")
+      .split(",")[0]
+      .trim()
+      .toLowerCase();
+    if (proto === "http" && host) {
+      const url = req.nextUrl.clone();
+      url.protocol = "https:";
+      url.host = host;
+      url.port = "";
+      return NextResponse.redirect(url, 301);
+    }
+  }
+
   // 관리자 영역 인증
   if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
     // 로그인 페이지/API는 통과
