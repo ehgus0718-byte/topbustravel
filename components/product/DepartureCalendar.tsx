@@ -66,10 +66,12 @@ export default function DepartureCalendar({
         <button
           onClick={() => setMonthIdx((i) => Math.max(0, i - 1))}
           disabled={monthIdx === 0}
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-line text-sub disabled:opacity-30"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-primary text-white shadow-sm transition active:scale-95 disabled:bg-line disabled:text-faint disabled:shadow-none"
           aria-label="이전 달"
         >
-          ‹
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
         </button>
         <p className="text-[16px] font-extrabold">
           {month.getFullYear()}년 {month.getMonth() + 1}월
@@ -77,10 +79,12 @@ export default function DepartureCalendar({
         <button
           onClick={() => setMonthIdx((i) => Math.min(months.length - 1, i + 1))}
           disabled={monthIdx >= months.length - 1}
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-line text-sub disabled:opacity-30"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-primary text-white shadow-sm transition active:scale-95 disabled:bg-line disabled:text-faint disabled:shadow-none"
           aria-label="다음 달"
         >
-          ›
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 6l6 6-6 6" />
+          </svg>
         </button>
       </div>
 
