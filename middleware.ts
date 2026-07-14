@@ -21,16 +21,17 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url, 301);
   }
 
-  // HTTP → HTTPS 강제 리다이렉트
-  // 환경변수 FORCE_HTTPS=1 일 때만 동작. (문제 발생 시 환경변수 삭제만으로 즉시 원복)
+  // HTTP → HTTPS 강제 리다이렉트 (대표 도메인 한정)
+  // 카페24 내부 상태점검 요청은 내부 주소(host)로 오므로 여기서 제외됨 → 헬스체크 정상 통과.
+  // (과거 FORCE_HTTPS 환경변수 방식은 내부 점검 요청까지 리다이렉트시켜 배포 실패를 유발했음)
   // x-forwarded-proto는 프록시에 따라 "https,http"처럼 콤마로 올 수 있어 첫 값만 사용.
   // 헤더가 없으면 판단 불가이므로 리다이렉트하지 않음 (무한 루프 방어).
-  if (process.env.FORCE_HTTPS === "1") {
+  if (host === CANONICAL_HOST) {
     const proto = (req.headers.get("x-forwarded-proto") || "")
       .split(",")[0]
       .trim()
       .toLowerCase();
-    if (proto === "http" && host) {
+    if (proto === "http") {
       const url = req.nextUrl.clone();
       url.protocol = "https:";
       url.host = host;
