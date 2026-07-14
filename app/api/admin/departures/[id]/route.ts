@@ -3,12 +3,12 @@ import { createAdminSupabase } from "@/lib/supabase/admin";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-// PUT: 출발일 수정 (가격/좌석/상태)
+// PUT: 출발일 수정 (가격/좌석/최소출발인원/상태)
 export async function PUT(req: Request, { params }: Ctx) {
   const { id } = await params;
   const body = await req.json();
   const allowed: any = {};
-  for (const k of ["adult_price", "child_price", "infant_price", "total_seats", "reserved_seats", "status"]) {
+  for (const k of ["adult_price", "child_price", "infant_price", "total_seats", "reserved_seats", "min_seats", "status"]) {
     if (k in body) allowed[k] = body[k];
   }
   const sb = createAdminSupabase();

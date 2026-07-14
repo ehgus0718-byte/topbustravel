@@ -16,6 +16,35 @@ const SECTIONS = [
   { id: "sec-review", label: "리뷰" },
 ] as const;
 
+// 출발일 상태 배지 — 마감임박 > 출발확정 > 모집중 (min_seats=0이면 표시 안 함)
+function DepartureBadge({ dep }: { dep: Departure }) {
+  const remaining = Math.max(dep.total_seats - dep.reserved_seats, 0);
+  if (remaining <= 0) return null;
+  if (remaining <= 5) {
+    return (
+      <span className="rounded-md bg-danger px-1.5 py-0.5 text-[11px] font-bold text-white">
+        마감임박
+      </span>
+    );
+  }
+  const minSeats = dep.min_seats ?? 0;
+  if (minSeats > 0) {
+    if (dep.reserved_seats >= minSeats) {
+      return (
+        <span className="rounded-md bg-success px-1.5 py-0.5 text-[11px] font-bold text-white">
+          출발확정
+        </span>
+      );
+    }
+    return (
+      <span className="rounded-md bg-white px-1.5 py-0.5 text-[11px] font-bold text-sub">
+        모집중
+      </span>
+    );
+  }
+  return null;
+}
+
 export default function DetailClient({
   product,
   tel,
@@ -117,9 +146,12 @@ export default function DetailClient({
         {selected && (
           <div className="mt-3 flex items-center justify-between rounded-xl bg-primary-soft px-4 py-3">
             <div>
-              <p className="text-[13px] font-semibold text-primary">
-                {fmtDate(selected.departure_date)} 출발
-              </p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-[13px] font-semibold text-primary">
+                  {fmtDate(selected.departure_date)} 출발
+                </p>
+                <DepartureBadge dep={selected} />
+              </div>
               <p className="text-[12px] text-sub">
                 잔여 {Math.max(selected.total_seats - selected.reserved_seats, 0)}석
               </p>

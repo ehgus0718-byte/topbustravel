@@ -19,11 +19,11 @@ export async function GET(req: Request) {
 }
 
 // POST: 출발일 일괄 등록
-// { product_id, start_date, end_date, weekdays: [0-6], adult_price?, child_price?, total_seats }
+// { product_id, start_date, end_date, weekdays: [0-6], adult_price?, child_price?, total_seats, min_seats? }
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { product_id, start_date, end_date, weekdays, adult_price, child_price, total_seats } = body;
+    const { product_id, start_date, end_date, weekdays, adult_price, child_price, total_seats, min_seats } = body;
     if (!product_id || !start_date || !end_date || !Array.isArray(weekdays) || weekdays.length === 0) {
       return NextResponse.json({ error: "필수 값이 누락되었습니다." }, { status: 400 });
     }
@@ -39,6 +39,7 @@ export async function POST(req: Request) {
           adult_price: adult_price || null,
           child_price: child_price || null,
           total_seats: Number(total_seats) || 40,
+          min_seats: Number(min_seats) || 0,
         });
       }
       cur.setDate(cur.getDate() + 1);

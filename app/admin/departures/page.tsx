@@ -15,6 +15,7 @@ export default function AdminDeparturesPage() {
     weekdays: [] as number[],
     adult_price: "",
     total_seats: "40",
+    min_seats: "",
   });
   const [busy, setBusy] = useState(false);
 
@@ -55,6 +56,7 @@ export default function AdminDeparturesPage() {
           weekdays: bulk.weekdays,
           adult_price: bulk.adult_price ? Number(bulk.adult_price) : null,
           total_seats: Number(bulk.total_seats) || 40,
+          min_seats: bulk.min_seats ? Number(bulk.min_seats) : 0,
         }),
       });
       const data = await res.json();
@@ -132,6 +134,7 @@ export default function AdminDeparturesPage() {
             <input type="number" placeholder="가격 (비우면 상품 기본가)" value={bulk.adult_price} onChange={(e) => setBulk({ ...bulk, adult_price: e.target.value })} className="rounded-xl border border-line px-3 py-2.5 text-[13px]" />
             <input type="number" placeholder="좌석 수" value={bulk.total_seats} onChange={(e) => setBulk({ ...bulk, total_seats: e.target.value })} className="rounded-xl border border-line px-3 py-2.5 text-[13px]" />
           </div>
+          <input type="number" placeholder="최소출발인원 (비우면 미사용 · 충족 시 '출발확정' 표시)" value={bulk.min_seats} onChange={(e) => setBulk({ ...bulk, min_seats: e.target.value })} className="mt-2 w-full rounded-xl border border-line px-3 py-2.5 text-[13px]" />
           <button onClick={addBulk} disabled={busy} className="mt-2.5 h-11 w-full rounded-xl bg-ink text-[13px] font-bold text-white disabled:opacity-60">
             {busy ? "등록 중..." : "일괄 등록"}
           </button>
@@ -145,6 +148,16 @@ export default function AdminDeparturesPage() {
                 <p className="text-[14px] font-bold">{fmtDate(d.departure_date)}</p>
                 <p className="text-[12px] text-faint">
                   {d.adult_price ? won(d.adult_price) : "기본가"} · 예약 {d.reserved_seats}/{d.total_seats}석
+                  {(d.min_seats ?? 0) > 0 && (
+                    <>
+                      {" "}· 최소 {d.min_seats}명{" "}
+                      {d.reserved_seats >= d.min_seats ? (
+                        <span className="font-bold text-success">출발확정</span>
+                      ) : (
+                        <span className="font-semibold">모집중</span>
+                      )}
+                    </>
+                  )}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-1.5">
@@ -165,6 +178,16 @@ export default function AdminDeparturesPage() {
                   className="rounded-lg border border-line px-2.5 py-1.5 text-[12px] font-semibold text-sub"
                 >
                   가격
+                </button>
+                <button
+                  onClick={() => {
+                    const v = prompt("최소출발인원 (0 또는 비우면 미사용)", d.min_seats ?? "0");
+                    if (v === null) return;
+                    patch(d.id, { min_seats: v === "" ? 0 : Math.max(0, Number(v) || 0) });
+                  }}
+                  className="rounded-lg border border-line px-2.5 py-1.5 text-[12px] font-semibold text-sub"
+                >
+                  최소인원
                 </button>
                 <button onClick={() => remove(d.id)} className="px-1 text-[12px] text-danger">
                   삭제

@@ -45,6 +45,7 @@ export interface Departure {
   infant_price: number | null;
   total_seats: number;
   reserved_seats: number;
+  min_seats: number; // 최소출발인원 (0 = 미사용)
   status: "open" | "closed" | "canceled";
 }
 
