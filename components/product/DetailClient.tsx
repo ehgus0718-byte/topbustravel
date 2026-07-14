@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Departure, ProductDetail } from "@/types";
 import { won, fmtDate } from "@/lib/format";
@@ -108,6 +108,8 @@ export default function DetailClient({
   const [infant, setInfant] = useState(0);
   const calendarRef = useRef<HTMLDivElement>(null);
   const [pulse, setPulse] = useState(false);
+  const [activeSection, setActiveSection] = useState<string>(SECTIONS[0].id);
+  const [shareState, setShareState] = useState<"idle" | "copied">("idle");
 
   const avgRating = useMemo(() => {
     if (product.reviews.length === 0) return null;
@@ -137,6 +139,24 @@ export default function DetailClient({
   const totalPeople = adult + child + infant;
   const canIncrease = !!selected && totalPeople < remaining;
 
+  // 스크롤 스파이 — 현재 화면에 보이는 섹션을 감지해 탭 하이라이트 (실패해도 탭 클릭 이동은 정상 동작)
+  useEffect(() => {
+    if (typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) setActiveSection(entry.target.id);
+        });
+      },
+      { rootMargin: "-120px 0px -60% 0px", threshold: 0 }
+    );
+    const els = SECTIONS.map((s) => document.getElementById(s.id)).filter(
+      (el): el is HTMLElement => !!el
+    );
+    els.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
   const goReserve = () => {
     if (!selected) {
       calendarRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -158,19 +178,64 @@ export default function DetailClient({
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  const handleShare = async () => {
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    if (typeof navigator !== "undefined" && "share" in navigator) {
+      try {
+        await (navigator as any).share({
+          title: product.title,
+          text: product.summary || product.title,
+          url,
+        });
+      } catch {
+        // 사용자가 공유를 취소한 경우 등 — 조용히 무시
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareState("copied");
+      setTimeout(() => setShareState("idle"), 2000);
+    } catch {
+      // 클립보드 접근 실패 시에도 조용히 무시 (기능 없어도 페이지 동작에는 영향 없음)
+    }
+  };
+
   return (
     <div className="pb-28">
       <Gallery images={product.images} title={product.title} />
 
       {/* 타이틀 영역 */}
       <div className="border-b-8 border-canvas px-4 py-5">
-        <div className="flex items-center gap-1.5 text-[12px] font-semibold">
-          <span className="rounded-md bg-primary-soft px-1.5 py-0.5 text-primary">
-            {product.duration_text}
-          </span>
-          {product.category?.name && (
-            <span className="text-faint">{product.category.name}</span>
-          )}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-[12px] font-semibold">
+            <span className="rounded-md bg-primary-soft px-1.5 py-0.5 text-primary">
+              {product.duration_text}
+            </span>
+            {product.category?.name && (
+              <span className="text-faint">{product.category.name}</span>
+            )}
+          </div>
+          <div className="relative">
+            <button
+              onClick={handleShare}
+              aria-label="공유하기"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-line text-sub active:bg-canvas"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <circle cx="18" cy="5" r="3" />
+                <circle cx="6" cy="12" r="3" />
+                <circle cx="18" cy="19" r="3" />
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+              </svg>
+            </button>
+            {shareState === "copied" && (
+              <span className="absolute right-0 top-9 whitespace-nowrap rounded-lg bg-ink px-2.5 py-1.5 text-[11px] font-semibold text-white">
+                링크가 복사되었습니다
+              </span>
+            )}
+          </div>
         </div>
         <h1 className="mt-2 text-[21px] font-extrabold leading-snug">
           {product.title}
@@ -267,6 +332,14 @@ export default function DetailClient({
             </div>
           </>
         )}
+
+        {/* 신뢰 배너 */}
+        <div className="mt-3 flex items-center gap-1.5 rounded-lg bg-canvas px-3 py-2.5 text-[11.5px] leading-relaxed text-faint">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0" aria-hidden>
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+          <span>정식 등록 여행사 · 관광사업등록 제2018-000008호 · 사업자등록 781-69-00237</span>
+        </div>
       </div>
 
       {/* 섹션 탭 */}
@@ -275,9 +348,14 @@ export default function DetailClient({
           <button
             key={s.id}
             onClick={() => scrollTo(s.id)}
-            className="flex-1 py-3 text-[13px] font-semibold text-sub active:text-ink"
+            className={`relative flex-1 py-3 text-[13px] font-semibold transition ${
+              activeSection === s.id ? "text-primary" : "text-sub active:text-ink"
+            }`}
           >
             {s.label}
+            {activeSection === s.id && (
+              <span className="absolute inset-x-3 -bottom-px h-[2px] rounded-full bg-primary" />
+            )}
           </button>
         ))}
       </div>
