@@ -49,14 +49,20 @@ function safeRemove(el: HTMLElement | null) {
 export default function ReserveClient({
   product,
   departure,
+  initialAdult = 1,
+  initialChild = 0,
+  initialInfant = 0,
 }: {
   product: ProductDetail;
   departure: Departure;
+  initialAdult?: number;
+  initialChild?: number;
+  initialInfant?: number;
 }) {
   const router = useRouter();
-  const [adult, setAdult] = useState(1);
-  const [child, setChild] = useState(0);
-  const [infant, setInfant] = useState(0);
+  const [adult, setAdult] = useState(initialAdult);
+  const [child, setChild] = useState(initialChild);
+  const [infant, setInfant] = useState(initialInfant);
   const [boardingId, setBoardingId] = useState<string | null>(
     product.boarding_points[0]?.id ?? null
   );

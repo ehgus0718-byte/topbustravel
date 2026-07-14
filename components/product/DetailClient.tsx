@@ -45,6 +45,51 @@ function DepartureBadge({ dep }: { dep: Departure }) {
   return null;
 }
 
+// 컴팩트 인원 카운터 (상세페이지 예상금액 계산용)
+function MiniCounter({
+  label,
+  priceText,
+  value,
+  min,
+  canIncrease,
+  onChange,
+}: {
+  label: string;
+  priceText: string;
+  value: number;
+  min: number;
+  canIncrease: boolean;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between py-1.5">
+      <div>
+        <span className="text-[14px] font-semibold">{label}</span>
+        <span className="ml-1.5 text-[12px] text-faint">{priceText}</span>
+      </div>
+      <div className="flex items-center gap-2.5">
+        <button
+          onClick={() => onChange(Math.max(min, value - 1))}
+          disabled={value <= min}
+          aria-label={`${label} 줄이기`}
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-line bg-white text-[16px] text-sub disabled:opacity-30"
+        >
+          −
+        </button>
+        <span className="w-5 text-center text-[15px] font-bold">{value}</span>
+        <button
+          onClick={() => onChange(value + 1)}
+          disabled={!canIncrease}
+          aria-label={`${label} 늘리기`}
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-line bg-white text-[16px] text-sub disabled:opacity-30"
+        >
+          +
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function DetailClient({
   product,
   tel,
@@ -58,6 +103,9 @@ export default function DetailClient({
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState<Departure | null>(null);
+  const [adult, setAdult] = useState(1);
+  const [child, setChild] = useState(0);
+  const [infant, setInfant] = useState(0);
   const calendarRef = useRef<HTMLDivElement>(null);
   const [pulse, setPulse] = useState(false);
 
@@ -68,6 +116,27 @@ export default function DetailClient({
     ).toFixed(1);
   }, [product.reviews]);
 
+  // 가격 계산 — ReserveClient(예약 페이지)와 동일한 fallback 순서
+  const prices = useMemo(() => {
+    if (!selected) return null;
+    return {
+      adult: selected.adult_price ?? product.base_price,
+      child: selected.child_price ?? product.child_price ?? product.base_price,
+      infant: selected.infant_price ?? product.infant_price ?? 0,
+    };
+  }, [selected, product]);
+
+  const total = useMemo(() => {
+    if (!prices) return 0;
+    return adult * prices.adult + child * prices.child + infant * prices.infant;
+  }, [adult, child, infant, prices]);
+
+  const remaining = selected
+    ? Math.max(selected.total_seats - selected.reserved_seats, 0)
+    : 0;
+  const totalPeople = adult + child + infant;
+  const canIncrease = !!selected && totalPeople < remaining;
+
   const goReserve = () => {
     if (!selected) {
       calendarRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -75,7 +144,8 @@ export default function DetailClient({
       setTimeout(() => setPulse(false), 2000);
       return;
     }
-    const target = `/reserve/${product.slug}?date=${selected.departure_date}`;
+    const qs = `date=${selected.departure_date}&adult=${adult}&child=${child}&infant=${infant}`;
+    const target = `/reserve/${product.slug}?${qs}`;
     // 비회원이면 예약 페이지 대신 로그인으로 안내 (서버에서도 동일하게 재차 검증됨)
     if (!user) {
       router.push(`/login?next=${encodeURIComponent(target)}`);
@@ -143,23 +213,59 @@ export default function DetailClient({
           selectedId={selected?.id ?? null}
           onSelect={setSelected}
         />
-        {selected && (
-          <div className="mt-3 flex items-center justify-between rounded-xl bg-primary-soft px-4 py-3">
-            <div>
-              <div className="flex items-center gap-1.5">
-                <p className="text-[13px] font-semibold text-primary">
-                  {fmtDate(selected.departure_date)} 출발
+        {selected && prices && (
+          <>
+            <div className="mt-3 flex items-center justify-between rounded-xl bg-primary-soft px-4 py-3">
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-[13px] font-semibold text-primary">
+                    {fmtDate(selected.departure_date)} 출발
+                  </p>
+                  <DepartureBadge dep={selected} />
+                </div>
+                <p className="text-[12px] text-sub">
+                  잔여 {remaining}석
                 </p>
-                <DepartureBadge dep={selected} />
               </div>
-              <p className="text-[12px] text-sub">
-                잔여 {Math.max(selected.total_seats - selected.reserved_seats, 0)}석
+              <p className="text-[16px] font-extrabold text-primary">
+                {won(prices.adult)}
               </p>
             </div>
-            <p className="text-[16px] font-extrabold text-primary">
-              {won(selected.adult_price ?? product.base_price)}
-            </p>
-          </div>
+
+            {/* 인원 선택 + 예상 금액 */}
+            <div className="mt-2 rounded-xl border border-line px-4 py-3">
+              <MiniCounter
+                label="성인"
+                priceText={won(prices.adult)}
+                value={adult}
+                min={1}
+                canIncrease={canIncrease}
+                onChange={setAdult}
+              />
+              <MiniCounter
+                label="아동"
+                priceText={won(prices.child)}
+                value={child}
+                min={0}
+                canIncrease={canIncrease}
+                onChange={setChild}
+              />
+              <MiniCounter
+                label="유아"
+                priceText={prices.infant > 0 ? won(prices.infant) : "무료"}
+                value={infant}
+                min={0}
+                canIncrease={canIncrease}
+                onChange={setInfant}
+              />
+              <div className="mt-1.5 flex items-center justify-between border-t border-line pt-2.5">
+                <span className="text-[13px] font-bold">예상 금액</span>
+                <span className="text-[17px] font-extrabold text-primary">
+                  {won(total)}
+                </span>
+              </div>
+            </div>
+          </>
         )}
       </div>
 
@@ -309,7 +415,9 @@ export default function DetailClient({
               selected ? "bg-primary" : "bg-primary/85"
             }`}
           >
-            {selected ? `${fmtDate(selected.departure_date)} 예약하기` : "출발일 선택하고 예약하기"}
+            {selected
+              ? `${won(total)} · ${fmtDate(selected.departure_date)} 예약하기`
+              : "출발일 선택하고 예약하기"}
           </button>
         </div>
       </div>
