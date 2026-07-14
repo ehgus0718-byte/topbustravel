@@ -22,6 +22,7 @@ export interface Product {
   is_active: boolean;
   includes: string[];
   excludes: string[];
+  optional_items: string[];
   notices: string | null;
   refund_policy: string | null;
   created_at: string;

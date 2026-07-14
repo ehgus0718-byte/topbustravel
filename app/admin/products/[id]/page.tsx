@@ -18,6 +18,7 @@ const EMPTY = {
   is_active: true,
   includes: [] as string[],
   excludes: [] as string[],
+  optional_items: [] as string[],
   notices: "",
   refund_policy: "",
 };
@@ -262,6 +263,14 @@ export default function AdminProductEditPage() {
             />
           </Field>
         </div>
+
+        <Field label="선택경비 (한 줄에 하나 · 현장에서 원하는 분만 결제하는 항목, 예: 케이블카 탑승권)">
+          <Textarea
+            rows={3}
+            value={(form.optional_items ?? []).join("\n")}
+            onChange={(v) => set("optional_items", v.split("\n"))}
+          />
+        </Field>
 
         {/* 탑승지 */}
         <Field label="탑승지">

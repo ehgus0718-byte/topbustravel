@@ -71,6 +71,7 @@ export async function getProductBySlug(
     ...product,
     includes: (product.includes ?? []) as string[],
     excludes: (product.excludes ?? []) as string[],
+    optional_items: (product.optional_items ?? []) as string[],
     images: (product.images ?? []).sort(sortByOrder),
     boarding_points: (product.boarding_points ?? []).sort(sortByOrder),
     itinerary: (product.itinerary ?? []).sort(

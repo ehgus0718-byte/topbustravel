@@ -152,7 +152,7 @@ export default function DetailClient({
         </p>
       </section>
 
-      {/* 포함/불포함 */}
+      {/* 포함/불포함/선택경비 */}
       <section id="sec-include" className="scroll-mt-28 border-b-8 border-canvas px-4 py-6">
         <h2 className="mb-4 text-[17px] font-extrabold">포함 / 불포함</h2>
         <div className="grid grid-cols-1 gap-3">
@@ -176,6 +176,21 @@ export default function DetailClient({
               ))}
             </ul>
           </div>
+          {(product.optional_items ?? []).length > 0 && (
+            <div className="rounded-2xl bg-canvas p-4">
+              <p className="mb-2.5 text-[13px] font-bold text-primary">＋ 선택경비</p>
+              <ul className="space-y-1.5">
+                {product.optional_items.map((item, i) => (
+                  <li key={i} className="text-[14px] text-sub">
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2.5 text-[12px] leading-relaxed text-faint">
+                현장에서 원하시는 분만 선택하여 결제하는 항목입니다.
+              </p>
+            </div>
+          )}
         </div>
       </section>
 
