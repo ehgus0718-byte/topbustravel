@@ -218,6 +218,9 @@ export default function DetailClient({
             {product.category?.name && (
               <span className="text-faint">{product.category.name}</span>
             )}
+            {product.product_code && (
+              <span className="text-faint">· 상품코드 {product.product_code}</span>
+            )}
           </div>
           <div className="relative">
             <button

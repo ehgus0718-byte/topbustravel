@@ -4,20 +4,20 @@ import { createAdminSupabase } from "@/lib/supabase/admin";
 /**
  * GET ?status=&q= : 예약 목록
  *
- * q 검색 대상 (2026-07 확장):
+ * q 검색 대상:
  * 1) 예약자 이름 / 전화번호 — 기존과 동일한 SQL or 필터
  * 2) 예약번호 — 화면 표기(UUID 앞 8자리 대문자) 기준.
  *    hex 4~8자 입력이면 UUID 범위(gte/lte)로 검색 (uuid는 캐스팅 없이 ilike 불가)
- * 3) 상품명 — products!inner 조인으로 부모(예약) 필터
+ * 3) 상품명 / 상품코드 — products!inner 조인으로 부모(예약) 필터
  *    (lib/api/products.ts의 categories!inner + eq("category.slug") 검증된 패턴과 동일)
  *
- * 세 갈래 결과를 id 기준으로 합쳐 최신순 정렬. q가 없으면 기존 동작 그대로.
+ * 각 갈래 결과를 id 기준으로 합쳐 최신순 정렬. q가 없으면 기존 동작 그대로.
  */
 
 const SELECT_BASE =
-  "*, product:products(title), departure:departures(departure_date), boarding_point:boarding_points(name, boarding_time)";
+  "*, product:products(title, product_code), departure:departures(departure_date), boarding_point:boarding_points(name, boarding_time)";
 const SELECT_INNER =
-  "*, product:products!inner(title), departure:departures(departure_date), boarding_point:boarding_points(name, boarding_time)";
+  "*, product:products!inner(title, product_code), departure:departures(departure_date), boarding_point:boarding_points(name, boarding_time)";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -49,8 +49,10 @@ export async function GET(req: Request) {
       build(SELECT_BASE).or(
         `customer_name.ilike.%${q}%,customer_phone.ilike.%${q}%`
       ),
-      // 3) 상품명
+      // 3-a) 상품명
       build(SELECT_INNER).ilike("product.title", `%${q}%`),
+      // 3-b) 상품코드 (YYYYMMDD001 형식 — 부분 입력도 매칭)
+      build(SELECT_INNER).ilike("product.product_code", `%${q}%`),
     ];
 
     // 2) 예약번호 (UUID 앞자리) — hex 4~8자일 때만

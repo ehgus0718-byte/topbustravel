@@ -50,6 +50,9 @@ export default function AdminProductsPage() {
                   {p.is_featured && <span className="ml-1.5 text-[11px] text-accent">추천</span>}
                 </p>
                 <p className="text-[12px] text-faint">
+                  {p.product_code && (
+                    <span className="mr-1.5 font-semibold text-sub">{p.product_code}</span>
+                  )}
                   {p.category?.name ?? "-"} · {p.duration_text} · {won(p.base_price)}
                 </p>
               </Link>

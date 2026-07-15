@@ -11,6 +11,7 @@ export interface Product {
   category_id: string | null;
   title: string;
   slug: string;
+  product_code: string | null; // 자동 생성 상품코드 (YYYYMMDD + 3자리 순번, DB 트리거)
   summary: string | null;
   description: string | null;
   duration_text: string;
