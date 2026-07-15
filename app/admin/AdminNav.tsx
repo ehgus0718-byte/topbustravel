@@ -11,6 +11,7 @@ const MENU = [
   { href: "/admin/reviews", label: "리뷰" },
   { href: "/admin/notices", label: "공지" },
   { href: "/admin/events", label: "이벤트" },
+  { href: "/admin/popups", label: "팝업" },
   { href: "/admin/inquiries", label: "문의" },
   { href: "/admin/settings", label: "설정" },
 ];

@@ -1,7 +1,9 @@
 import Link from "next/link";
 import ProductCard from "@/components/product/ProductCard";
+import HomePopup from "@/components/home/HomePopup";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getCategories, getProducts } from "@/lib/api/products";
+import { getActivePopups, type Popup } from "@/lib/api/popups";
 
 export const dynamic = "force-dynamic";
 
@@ -20,8 +22,16 @@ export default async function HomePage() {
     // DB 미설정 시 빈 화면 유지
   }
 
+  // 홈 팝업 — 실패해도 홈 렌더링에는 영향 없음
+  let popups: Popup[] = [];
+  try {
+    popups = await getActivePopups(sb);
+  } catch {}
+
   return (
     <div>
+      {popups.length > 0 && <HomePopup popups={popups} />}
+
       {/* 히어로 */}
       <section className="relative overflow-hidden bg-primary text-white">
         <div className="relative mx-auto max-w-6xl px-5 pb-10 pt-9 md:px-6 md:pb-24 md:pt-20">
