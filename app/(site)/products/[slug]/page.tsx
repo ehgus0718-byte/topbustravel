@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import type { Product } from "@/types";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { getProductBySlug } from "@/lib/api/products";
+import { getProductBySlug, getProducts } from "@/lib/api/products";
 import { getSettings } from "@/lib/api/settings";
 import { getSessionUser } from "@/lib/session";
 import DetailClient from "@/components/product/DetailClient";
@@ -45,6 +46,18 @@ export default async function ProductDetailPage({ params }: Props) {
 
   if (!product) notFound();
 
+  // 관련상품 — 같은 카테고리의 다른 상품 (실패해도 상세페이지 표시에는 영향 없음)
+  let related: Product[] = [];
+  if (product.category?.slug) {
+    try {
+      const list = await getProducts(sb, {
+        categorySlug: product.category.slug,
+        limit: 5,
+      });
+      related = list.filter((p) => p.id !== product.id).slice(0, 4);
+    } catch {}
+  }
+
   // SEO: 상품 구조화 데이터
   const jsonLd = {
     "@context": "https://schema.org",
@@ -80,6 +93,7 @@ export default async function ProductDetailPage({ params }: Props) {
         tel={settings.tel || "042-000-0000"}
         kakaoUrl={settings.kakao_url || "#"}
         user={user ? { name: user.name } : null}
+        related={related}
       />
     </>
   );

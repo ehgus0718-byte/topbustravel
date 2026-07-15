@@ -1,12 +1,13 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Departure, ProductDetail } from "@/types";
+import type { Departure, Product, ProductDetail } from "@/types";
 import { won, fmtDate } from "@/lib/format";
 import Gallery from "./Gallery";
 import DepartureCalendar from "./DepartureCalendar";
 import ItineraryTimeline from "./ItineraryTimeline";
 import ReviewList from "./ReviewList";
+import ProductCard from "./ProductCard";
 
 const SECTIONS = [
   { id: "sec-desc", label: "상세설명" },
@@ -95,11 +96,13 @@ export default function DetailClient({
   tel,
   kakaoUrl,
   user,
+  related,
 }: {
   product: ProductDetail;
   tel: string;
   kakaoUrl: string;
   user?: { name: string } | null;
+  related?: Product[];
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState<Departure | null>(null);
@@ -463,6 +466,22 @@ export default function DetailClient({
         </h2>
         <ReviewList productId={product.id} reviews={product.reviews} user={user} />
       </section>
+
+      {/* 관련상품 — 같은 카테고리의 다른 상품 (없으면 섹션 자체를 표시하지 않음) */}
+      {(related ?? []).length > 0 && (
+        <section className="border-t-8 border-canvas py-6">
+          <h2 className="mb-4 px-4 text-[17px] font-extrabold">
+            {product.category?.name
+              ? `${product.category.name} 관련상품`
+              : "관련상품"}
+          </h2>
+          <div className="flex gap-3 overflow-x-auto px-4 pb-2 no-scrollbar md:grid md:grid-cols-4 md:gap-6 md:overflow-visible">
+            {(related ?? []).map((p) => (
+              <ProductCard key={p.id} product={p} horizontal />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* 스티키 하단 CTA */}
       <div className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-[480px] border-t border-line bg-white px-4 pb-[calc(env(safe-area-inset-bottom)+10px)] pt-2.5">

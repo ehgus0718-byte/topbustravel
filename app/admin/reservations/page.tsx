@@ -155,7 +155,7 @@ export default function AdminReservationsPage() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && load()}
-            placeholder="이름 또는 전화번호 검색"
+            placeholder="이름 · 전화번호 · 예약번호 · 상품명 검색"
             className="flex-1 rounded-xl border border-line px-3.5 py-2.5 text-[14px] outline-none focus:border-primary"
           />
           <button onClick={load} className="rounded-xl bg-ink px-4 text-[13px] font-bold text-white">
