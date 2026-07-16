@@ -16,6 +16,17 @@ type PopupItem = {
   created_at: string;
 };
 
+type FloatBtn = {
+  id: string;
+  label: string;
+  link_url: string;
+  icon_url: string | null;
+  new_tab: boolean;
+  sort_order: number;
+  is_visible: boolean;
+  created_at: string;
+};
+
 const EMPTY = {
   title: "",
   content: "",
@@ -23,6 +34,15 @@ const EMPTY = {
   link_url: "",
   starts_on: "",
   ends_on: "",
+  sort_order: 0,
+  is_visible: true,
+};
+
+const FB_EMPTY = {
+  label: "",
+  link_url: "",
+  icon_url: "",
+  new_tab: true,
   sort_order: 0,
   is_visible: true,
 };
@@ -35,13 +55,26 @@ export default function AdminPopupsPage() {
   const [uploading, setUploading] = useState(false);
   const [toast, setToast] = useState("");
 
+  // ── 플로팅 버튼 상태 ──
+  const [fbList, setFbList] = useState<FloatBtn[] | null>(null);
+  const [fbEditing, setFbEditing] = useState<string | "new" | null>(null);
+  const [fbForm, setFbForm] = useState<typeof FB_EMPTY>(FB_EMPTY);
+  const [fbSaving, setFbSaving] = useState(false);
+  const [fbUploading, setFbUploading] = useState(false);
+
   const load = () =>
     fetch("/api/admin/popups")
       .then((r) => r.json())
       .then((d) => setList(d.popups ?? []));
 
+  const loadFb = () =>
+    fetch("/api/admin/floating-buttons")
+      .then((r) => r.json())
+      .then((d) => setFbList(d.buttons ?? []));
+
   useEffect(() => {
     load();
+    loadFb();
   }, []);
   useEffect(() => {
     if (!toast) return;
@@ -49,6 +82,24 @@ export default function AdminPopupsPage() {
     return () => clearTimeout(t);
   }, [toast]);
 
+  const uploadTo = async (file: File, onDone: (url: string) => void, setBusy: (b: boolean) => void) => {
+    setBusy(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "업로드 실패");
+      onDone(data.url);
+      setToast("이미지를 업로드했습니다");
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // ── 팝업 핸들러 ──
   const openNew = () => {
     setForm(EMPTY);
     setEditing("new");
@@ -65,23 +116,6 @@ export default function AdminPopupsPage() {
       is_visible: p.is_visible,
     });
     setEditing(p.id);
-  };
-
-  const uploadImage = async (file: File) => {
-    setUploading(true);
-    try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "업로드 실패");
-      setForm((f) => ({ ...f, image_url: data.url }));
-      setToast("이미지를 업로드했습니다");
-    } catch (e: any) {
-      alert(e.message);
-    } finally {
-      setUploading(false);
-    }
   };
 
   const save = async () => {
@@ -114,6 +148,56 @@ export default function AdminPopupsPage() {
     await fetch(`/api/admin/popups/${id}`, { method: "DELETE" });
     setToast("삭제했습니다");
     load();
+  };
+
+  // ── 플로팅 버튼 핸들러 ──
+  const fbOpenNew = () => {
+    setFbForm(FB_EMPTY);
+    setFbEditing("new");
+  };
+  const fbOpenEdit = (b: FloatBtn) => {
+    setFbForm({
+      label: b.label,
+      link_url: b.link_url,
+      icon_url: b.icon_url ?? "",
+      new_tab: b.new_tab,
+      sort_order: b.sort_order ?? 0,
+      is_visible: b.is_visible,
+    });
+    setFbEditing(b.id);
+  };
+
+  const fbSave = async () => {
+    if (!fbForm.label.trim()) return alert("버튼 이름을 입력해 주세요.");
+    if (!fbForm.link_url.trim()) return alert("링크 주소를 입력해 주세요.");
+    setFbSaving(true);
+    try {
+      const url =
+        fbEditing === "new"
+          ? "/api/admin/floating-buttons"
+          : `/api/admin/floating-buttons/${fbEditing}`;
+      const method = fbEditing === "new" ? "POST" : "PATCH";
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(fbForm),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || "저장 실패");
+      setToast(fbEditing === "new" ? "버튼을 등록했습니다" : "수정했습니다");
+      setFbEditing(null);
+      loadFb();
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setFbSaving(false);
+    }
+  };
+
+  const fbRemove = async (id: string) => {
+    if (!confirm("이 버튼을 삭제할까요? 되돌릴 수 없습니다.")) return;
+    await fetch(`/api/admin/floating-buttons/${id}`, { method: "DELETE" });
+    setToast("삭제했습니다");
+    loadFb();
   };
 
   return (
@@ -171,7 +255,7 @@ export default function AdminPopupsPage() {
                     className="hidden"
                     onChange={(e) => {
                       const f = e.target.files?.[0];
-                      if (f) uploadImage(f);
+                      if (f) uploadTo(f, (url) => setForm((v) => ({ ...v, image_url: url })), setUploading);
                     }}
                   />
                 </label>
@@ -306,6 +390,180 @@ export default function AdminPopupsPage() {
             {list.length === 0 && (
               <p className="py-10 text-center text-sm text-faint">
                 등록된 팝업이 없습니다. 팝업을 만들어 보세요.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* ══════════ 플로팅 버튼 관리 ══════════ */}
+        <div className="mb-1 mt-10 flex items-center justify-between border-t border-line pt-8">
+          <h2 className="text-[17px] font-extrabold">
+            플로팅 버튼{" "}
+            {fbList && (
+              <span className="text-[13px] font-semibold text-faint">({fbList.length})</span>
+            )}
+          </h2>
+          <button
+            onClick={fbOpenNew}
+            className="rounded-lg bg-primary px-3 py-1.5 text-[13px] font-bold text-white"
+          >
+            + 버튼 만들기
+          </button>
+        </div>
+        <p className="mb-3 text-[12px] text-faint">
+          사이트 오른쪽 아래에 떠 있는 원형 링크 버튼입니다. 공개 상태 중 표시순서 상위{" "}
+          <b>3개까지만</b> 노출됩니다. (상품 상세·예약 페이지에서는 하단 예약 버튼과 겹치지
+          않도록 표시되지 않습니다)
+        </p>
+
+        {fbEditing && (
+          <div className="mb-4 rounded-2xl border border-primary/30 bg-primary-soft/40 p-4">
+            <input
+              value={fbForm.label}
+              onChange={(e) => setFbForm({ ...fbForm, label: e.target.value })}
+              placeholder="버튼 이름 (예: 카카오톡 문의, 단체버스 견적)"
+              className="w-full rounded-lg border border-line bg-white px-3 py-2.5 text-[14px] font-semibold outline-none focus:border-primary"
+            />
+            <input
+              value={fbForm.link_url}
+              onChange={(e) => setFbForm({ ...fbForm, link_url: e.target.value })}
+              placeholder="링크 주소 (예: /contact 또는 https://pf.kakao.com/...)"
+              className="mt-2.5 w-full rounded-lg border border-line bg-white px-3 py-2.5 text-[13px] outline-none focus:border-primary"
+            />
+
+            {/* 아이콘 */}
+            <div className="mt-2.5 flex items-center gap-3">
+              <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-full border border-line bg-white shadow-sm">
+                {fbForm.icon_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={fbForm.icon_url} alt="아이콘 미리보기" className="h-8 w-8 object-contain" />
+                ) : (
+                  <span className="text-[11px] text-faint">기본</span>
+                )}
+              </div>
+              <label className="flex h-10 flex-1 cursor-pointer items-center justify-center rounded-lg border border-dashed border-line bg-white text-[13px] font-semibold text-sub">
+                {fbUploading ? "업로드 중..." : "🖼️ 아이콘 이미지 업로드 (선택)"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) uploadTo(f, (url) => setFbForm((v) => ({ ...v, icon_url: url })), setFbUploading);
+                  }}
+                />
+              </label>
+              {fbForm.icon_url && (
+                <button
+                  onClick={() => setFbForm({ ...fbForm, icon_url: "" })}
+                  className="text-[12px] font-semibold text-faint underline-offset-2 hover:underline"
+                >
+                  제거
+                </button>
+              )}
+            </div>
+
+            <div className="mt-2.5 flex flex-wrap items-center gap-4 text-[13px]">
+              <label className="flex items-center gap-1.5 font-semibold">
+                <input
+                  type="checkbox"
+                  checked={fbForm.new_tab}
+                  onChange={(e) => setFbForm({ ...fbForm, new_tab: e.target.checked })}
+                  className="accent-primary"
+                />
+                새 창에서 열기
+              </label>
+              <label className="flex items-center gap-1.5 font-semibold">
+                <input
+                  type="checkbox"
+                  checked={fbForm.is_visible}
+                  onChange={(e) => setFbForm({ ...fbForm, is_visible: e.target.checked })}
+                  className="accent-primary"
+                />
+                공개
+              </label>
+              <label className="ml-auto flex items-center gap-1.5">
+                <span className="text-faint">표시순서</span>
+                <input
+                  type="number"
+                  value={fbForm.sort_order}
+                  onChange={(e) => setFbForm({ ...fbForm, sort_order: Number(e.target.value) })}
+                  className="w-16 rounded-lg border border-line bg-white px-2.5 py-2 text-center"
+                />
+              </label>
+            </div>
+
+            <div className="mt-3 flex gap-2">
+              <button
+                onClick={() => setFbEditing(null)}
+                className="h-10 flex-1 rounded-lg border border-line text-[13px] font-semibold text-sub"
+              >
+                취소
+              </button>
+              <button
+                onClick={fbSave}
+                disabled={fbSaving || fbUploading}
+                className="h-10 flex-1 rounded-lg bg-primary text-[13px] font-bold text-white disabled:opacity-50"
+              >
+                {fbSaving ? "저장 중..." : "저장"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {fbList === null ? (
+          <div className="h-16 animate-pulse rounded-xl bg-canvas" />
+        ) : (
+          <div className="space-y-2">
+            {fbList.map((b, i) => (
+              <div
+                key={b.id}
+                className="flex items-center gap-3 rounded-xl border border-line p-3"
+              >
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-line bg-white">
+                  {b.icon_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={b.icon_url} alt="" className="h-7 w-7 object-contain" />
+                  ) : (
+                    <span className="text-[10px] text-faint">기본</span>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[14px] font-bold">
+                    <span className="mr-1.5 text-[12px] font-semibold text-faint">
+                      #{b.sort_order}
+                    </span>
+                    {b.label}
+                    {i >= 3 && b.is_visible && (
+                      <span className="ml-1.5 text-[11px] font-semibold text-danger">
+                        (4번째부터는 노출 안 됨)
+                      </span>
+                    )}
+                  </p>
+                  <p className="truncate text-[12px] text-sub">
+                    🔗 {b.link_url} {b.new_tab && "· 새 창"}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  <span
+                    className={`rounded-lg px-2 py-1 text-[11px] font-bold ${
+                      b.is_visible ? "bg-primary-soft text-primary" : "bg-canvas text-faint"
+                    }`}
+                  >
+                    {b.is_visible ? "공개" : "비공개"}
+                  </span>
+                  <button onClick={() => fbOpenEdit(b)} className="text-[12px] text-sub">
+                    수정
+                  </button>
+                  <button onClick={() => fbRemove(b.id)} className="text-[12px] text-danger">
+                    삭제
+                  </button>
+                </div>
+              </div>
+            ))}
+            {fbList.length === 0 && (
+              <p className="py-8 text-center text-sm text-faint">
+                등록된 플로팅 버튼이 없습니다.
               </p>
             )}
           </div>
