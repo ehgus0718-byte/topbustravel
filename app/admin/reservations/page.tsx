@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import AdminNav from "../AdminNav";
-import { won, fmtDate, fmtDateTime, STATUS_LABEL } from "@/lib/format";
+import { won, fmtDate, fmtDateTime, formatPhone, STATUS_LABEL } from "@/lib/format";
 
 const FILTERS = ["all", "pending", "paid", "confirmed", "canceled", "refunded"];
 
@@ -12,6 +12,11 @@ const STATUS_BADGE: Record<string, string> = {
   confirmed: "bg-primary-soft text-primary",
   canceled: "bg-canvas text-faint",
   refunded: "bg-canvas text-faint",
+};
+
+const FIELD_LABEL: Record<string, string> = {
+  customer_name: "성함",
+  customer_phone: "휴대폰 번호",
 };
 
 type QuickFilter = "none" | "today" | "tomorrow" | "unpaid";
@@ -43,6 +48,13 @@ export default function AdminReservationsPage() {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
+  // ── 예약 정보 수정(성함/연락처) + 변경 이력 ──
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editBusy, setEditBusy] = useState(false);
+  const [histories, setHistories] = useState<Record<string, any[]>>({});
+
   const load = () => {
     const params = new URLSearchParams({ status });
     if (q.trim()) params.set("q", q.trim());
@@ -63,6 +75,61 @@ export default function AdminReservationsPage() {
       body: JSON.stringify(body),
     });
     load();
+  };
+
+  const loadHistory = async (id: string) => {
+    try {
+      const res = await fetch(`/api/admin/reservations/${id}/history`);
+      const d = await res.json();
+      setHistories((prev) => ({ ...prev, [id]: d.logs ?? [] }));
+    } catch {
+      setHistories((prev) => ({ ...prev, [id]: [] }));
+    }
+  };
+
+  const startEdit = (r: any) => {
+    setEditId(r.id);
+    setEditName(r.customer_name);
+    setEditPhone(r.customer_phone);
+  };
+
+  const saveEdit = async (r: any) => {
+    const name = editName.trim();
+    if (!name) {
+      alert("성함을 입력해 주세요.");
+      return;
+    }
+    if (editPhone.replace(/\D/g, "").length < 10) {
+      alert("올바른 휴대폰 번호를 입력해 주세요.");
+      return;
+    }
+    if (name === r.customer_name && editPhone === r.customer_phone) {
+      setEditId(null);
+      return;
+    }
+    if (!confirm("예약 정보를 수정하시겠습니까?")) return;
+
+    setEditBusy(true);
+    try {
+      const res = await fetch(`/api/admin/reservations/${r.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customer_name: name, customer_phone: editPhone }),
+      });
+      const d = await res.json();
+      if (!res.ok) {
+        alert(d.error ?? "수정에 실패했습니다.");
+        return;
+      }
+      alert("예약 정보 수정 완료");
+      setEditId(null);
+      load();
+      loadHistory(r.id);
+    } catch {
+      alert("수정에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setEditBusy(false);
+    }
   };
 
   // 서버에서 불러온 list는 그대로 두고, 화면 표시용으로만 추가 필터링
@@ -232,7 +299,12 @@ export default function AdminReservationsPage() {
           {filtered.map((r) => (
             <div key={r.id} className="rounded-xl border border-line">
               <button
-                onClick={() => setOpenId(openId === r.id ? null : r.id)}
+                onClick={() => {
+                  const next = openId === r.id ? null : r.id;
+                  setOpenId(next);
+                  setEditId(null);
+                  if (next && histories[r.id] === undefined) loadHistory(r.id);
+                }}
                 className="flex w-full items-center justify-between gap-2 p-3 text-left"
               >
                 <div className="min-w-0">
@@ -276,37 +348,102 @@ export default function AdminReservationsPage() {
                     </p>
                   )}
 
-                  <div className="mt-3 flex items-center gap-2">
-                    <select
-                      value={r.status}
-                      onChange={(e) => patch(r.id, { status: e.target.value })}
-                      className="rounded-lg border border-line px-2 py-2 text-[13px]"
-                    >
-                      {Object.entries(STATUS_LABEL).map(([k, v]) => (
-                        <option key={k} value={k}>
-                          {v}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      onClick={() => {
-                        const note = prompt("관리자 메모", r.admin_note ?? "");
-                        if (note === null) return;
-                        patch(r.id, { admin_note: note });
-                      }}
-                      className="rounded-lg border border-line px-3 py-2 text-[13px] font-semibold text-sub"
-                    >
-                      메모 {r.admin_note ? "✏️" : "+"}
-                    </button>
-                    <a
-                      href={`tel:${r.customer_phone.replace(/-/g, "")}`}
-                      className="rounded-lg border border-line px-3 py-2 text-[13px] font-semibold text-sub"
-                    >
-                      📞 전화
-                    </a>
-                  </div>
+                  {/* 예약 정보 수정 (성함/연락처) — 상태/금액은 이 폼에서 변경 불가 */}
+                  {editId === r.id ? (
+                    <div className="mt-3 rounded-lg border border-line p-3">
+                      <p className="mb-2 text-[12px] font-bold text-sub">예약 정보 수정</p>
+                      <div className="space-y-2">
+                        <input
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          placeholder="성함"
+                          className="w-full rounded-lg border border-line px-3 py-2.5 text-[13px] outline-none focus:border-primary"
+                        />
+                        <input
+                          value={editPhone}
+                          onChange={(e) => setEditPhone(formatPhone(e.target.value))}
+                          placeholder="휴대폰 번호"
+                          inputMode="numeric"
+                          className="w-full rounded-lg border border-line px-3 py-2.5 text-[13px] outline-none focus:border-primary"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => saveEdit(r)}
+                            disabled={editBusy}
+                            className="flex-1 rounded-lg bg-primary py-2.5 text-[13px] font-bold text-white disabled:opacity-60"
+                          >
+                            {editBusy ? "저장 중..." : "저장"}
+                          </button>
+                          <button
+                            onClick={() => setEditId(null)}
+                            disabled={editBusy}
+                            className="flex-1 rounded-lg border border-line py-2.5 text-[13px] font-semibold text-sub"
+                          >
+                            취소
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-3 flex items-center gap-2">
+                      <select
+                        value={r.status}
+                        onChange={(e) => patch(r.id, { status: e.target.value })}
+                        className="rounded-lg border border-line px-2 py-2 text-[13px]"
+                      >
+                        {Object.entries(STATUS_LABEL).map(([k, v]) => (
+                          <option key={k} value={k}>
+                            {v}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={() => startEdit(r)}
+                        className="rounded-lg border border-line px-3 py-2 text-[13px] font-semibold text-sub"
+                      >
+                        ✏️ 정보 수정
+                      </button>
+                      <button
+                        onClick={() => {
+                          const note = prompt("관리자 메모", r.admin_note ?? "");
+                          if (note === null) return;
+                          patch(r.id, { admin_note: note });
+                        }}
+                        className="rounded-lg border border-line px-3 py-2 text-[13px] font-semibold text-sub"
+                      >
+                        메모 {r.admin_note ? "✏️" : "+"}
+                      </button>
+                      <a
+                        href={`tel:${r.customer_phone.replace(/-/g, "")}`}
+                        className="rounded-lg border border-line px-3 py-2 text-[13px] font-semibold text-sub"
+                      >
+                        📞 전화
+                      </a>
+                    </div>
+                  )}
                   {r.admin_note && (
                     <p className="mt-2 text-[12px] text-faint">메모: {r.admin_note}</p>
+                  )}
+
+                  {/* 변경 이력 — 이전 정보 → 변경된 정보 */}
+                  {(histories[r.id]?.length ?? 0) > 0 && (
+                    <div className="mt-3 rounded-lg bg-canvas p-2.5">
+                      <p className="mb-1.5 text-[12px] font-bold text-sub">변경 이력</p>
+                      <ul className="space-y-1">
+                        {histories[r.id].map((h) => (
+                          <li key={h.id} className="text-[12px] text-sub">
+                            <span className="text-faint">{fmtDateTime(h.created_at)}</span>{" "}
+                            · {FIELD_LABEL[h.field] ?? h.field}:{" "}
+                            <span className="line-through">{h.old_value}</span>
+                            {" → "}
+                            <span className="font-semibold text-ink">{h.new_value}</span>{" "}
+                            <span className="text-faint">
+                              ({h.changed_by === "admin" ? "관리자" : "고객"})
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   )}
                 </div>
               )}
