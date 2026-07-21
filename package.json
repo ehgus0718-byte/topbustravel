@@ -6,7 +6,7 @@
   "dev": "next dev",
   "prestart": "node scripts/ensure-build.js",
   "build": "next build",
-  "start": "next start -p ${PORT:-3000}",
+  "start": "node --max-old-space-size=400 node_modules/next/dist/bin/next start -p ${PORT:-3000}",
   "lint": "next lint"
 },
   "dependencies": {
