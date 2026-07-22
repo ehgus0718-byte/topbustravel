@@ -52,6 +52,14 @@
       "namedRegex": "^/api/admin/floating\\-buttons/(?<nxtPid>[^/]+?)(?:/)?$"
     },
     {
+      "page": "/api/admin/hero-slides/[id]",
+      "regex": "^/api/admin/hero\\-slides/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/admin/hero\\-slides/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
       "page": "/api/admin/inquiries/[id]",
       "regex": "^/api/admin/inquiries/([^/]+?)(?:/)?$",
       "routeKeys": {
