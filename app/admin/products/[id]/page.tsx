@@ -357,21 +357,80 @@ export default function AdminProductEditPage() {
                     삭제
                   </button>
                 </div>
-                <input
+                <textarea
                   value={it.description ?? ""}
                   onChange={(e) => {
                     const n = [...itinerary];
                     n[i] = { ...n[i], description: e.target.value };
                     setItinerary(n);
                   }}
-                  placeholder="설명 (선택)"
+                  rows={2}
+                  placeholder="관광지 소개글 (선택 · 여러 줄 가능 — 사진과 함께 카드로 표시됩니다)"
                   className="mt-2 w-full rounded-lg border border-line px-2 py-2 text-[13px]"
                 />
+                {/* 일정 사진 (최대 4장) */}
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  {(it.image_urls ?? []).map((url: string, pi: number) => (
+                    <div key={pi} className="relative">
+                      <img src={url} alt="" className="h-14 w-[74px] rounded-lg object-cover" />
+                      <button
+                        onClick={() => {
+                          const n = [...itinerary];
+                          n[i] = {
+                            ...n[i],
+                            image_urls: (n[i].image_urls ?? []).filter(
+                              (_: string, pj: number) => pj !== pi
+                            ),
+                          };
+                          setItinerary(n);
+                        }}
+                        className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-danger text-[11px] text-white"
+                        aria-label="사진 삭제"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                  {(it.image_urls ?? []).length < 4 && (
+                    <label className="flex h-14 w-[74px] cursor-pointer items-center justify-center rounded-lg border border-dashed border-line text-[11px] font-semibold text-faint">
+                      + 사진
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        hidden
+                        onChange={async (e) => {
+                          const files = Array.from(e.target.files ?? []).slice(
+                            0,
+                            4 - (it.image_urls ?? []).length
+                          );
+                          for (const f of files) {
+                            const url = await upload(f);
+                            if (url) {
+                              setItinerary((prev) => {
+                                const n = [...prev];
+                                n[i] = {
+                                  ...n[i],
+                                  image_urls: [...(n[i].image_urls ?? []), url],
+                                };
+                                return n;
+                              });
+                            }
+                          }
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                  )}
+                </div>
               </div>
             ))}
             <button
               onClick={() =>
-                setItinerary([...itinerary, { day_no: 1, time_text: "", title: "", description: "" }])
+                setItinerary([
+                  ...itinerary,
+                  { day_no: 1, time_text: "", title: "", description: "", image_urls: [] },
+                ])
               }
               className="rounded-xl border border-line px-3 py-2 text-[13px] font-semibold text-sub"
             >

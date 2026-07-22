@@ -39,6 +39,9 @@ export async function saveChildren(sb: any, productId: string, children: any) {
         time_text: x.time_text || null,
         title: x.title.trim(),
         description: x.description || null,
+        image_urls: Array.isArray(x.image_urls)
+          ? x.image_urls.filter((u: string) => !!u?.trim())
+          : [],
         sort_order: i,
       }))
     );

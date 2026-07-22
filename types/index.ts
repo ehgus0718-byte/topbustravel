@@ -65,6 +65,7 @@ export interface ItineraryItem {
   time_text: string | null;
   title: string;
   description: string | null;
+  image_urls: string[]; // 관광지 사진 (관리자에서 업로드, 없으면 빈 배열)
   sort_order: number;
 }
 
