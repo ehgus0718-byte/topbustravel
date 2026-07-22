@@ -1,9 +1,11 @@
 import Link from "next/link";
 import ProductCard from "@/components/product/ProductCard";
 import HomePopup from "@/components/home/HomePopup";
+import HeroSlider from "@/components/home/HeroSlider";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getCategories, getProducts } from "@/lib/api/products";
 import { getActivePopups, type Popup } from "@/lib/api/popups";
+import { getActiveHeroSlides, type HeroSlide } from "@/lib/api/heroSlides";
 
 export const dynamic = "force-dynamic";
 
@@ -28,11 +30,20 @@ export default async function HomePage() {
     popups = await getActivePopups(sb);
   } catch {}
 
+  // 히어로 슬라이드 — 실패하거나 비어 있으면 기존 파란 히어로로 폴백
+  let heroSlides: HeroSlide[] = [];
+  try {
+    heroSlides = await getActiveHeroSlides(sb);
+  } catch {}
+
   return (
     <div>
       {popups.length > 0 && <HomePopup popups={popups} />}
 
-      {/* 히어로 */}
+      {/* 히어로: 슬라이드가 등록돼 있으면 사진 슬라이더, 없으면 기존 파란 히어로 */}
+      {heroSlides.length > 0 ? (
+        <HeroSlider slides={heroSlides} />
+      ) : (
       <section className="relative overflow-hidden bg-primary text-white">
         <div className="relative mx-auto max-w-6xl px-5 pb-10 pt-9 md:px-6 md:pb-24 md:pt-20">
           <RouteDeco />
@@ -55,6 +66,7 @@ export default async function HomePage() {
           </Link>
         </div>
       </section>
+      )}
 
       <div className="mx-auto max-w-6xl md:px-6">
         {/* 카테고리 */}
