@@ -4,6 +4,8 @@ import { getSessionUser } from "@/lib/session";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { won, formatPhone } from "@/lib/format";
 import LogoutButton from "@/components/auth/LogoutButton";
+import ProductCard from "@/components/product/ProductCard";
+import { getProductsByIds } from "@/lib/api/products";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "마이페이지" };
@@ -29,6 +31,13 @@ export default async function MyPage() {
     .eq("customer_phone", user.phone)
     .order("created_at", { ascending: false })
     .limit(50);
+
+  const { data: wishRows } = await sb
+    .from("wishlists")
+    .select("product_id")
+    .eq("user_uid", user.uid)
+    .order("created_at", { ascending: false });
+  const wishlist = await getProductsByIds(sb, (wishRows ?? []).map((r) => r.product_id));
 
   return (
     <div className="px-5 pb-16 pt-8 md:pt-12">
@@ -93,6 +102,27 @@ export default async function MyPage() {
             );
           })}
         </ul>
+      )}
+
+      <h2 id="wishlist" className="mt-10 scroll-mt-20 text-[16px] font-extrabold md:text-lg">
+        찜한 여행
+      </h2>
+      {wishlist.length === 0 ? (
+        <div className="mt-4 rounded-2xl border border-line px-5 py-10 text-center">
+          <p className="text-sm text-faint">아직 찜한 여행이 없습니다.</p>
+          <Link
+            href="/products"
+            className="mt-4 inline-block rounded-xl bg-primary px-5 py-2.5 text-[14px] font-bold text-white"
+          >
+            여행상품 보러가기
+          </Link>
+        </div>
+      ) : (
+        <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6">
+          {wishlist.map((p) => (
+            <ProductCard key={p.id} product={p} />
+          ))}
+        </div>
       )}
     </div>
   );

@@ -2,6 +2,7 @@ import Header from "@/components/layout/Header";
 import BottomNav from "@/components/layout/BottomNav";
 import Footer from "@/components/layout/Footer";
 import FloatingLinks from "@/components/common/FloatingLinks";
+import { WishlistProvider } from "@/components/product/WishlistProvider";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getSettings } from "@/lib/api/settings";
 import { getActiveFloatingButtons, type FloatingButton } from "@/lib/api/floating";
@@ -28,12 +29,14 @@ export default async function SiteLayout({
   const user = await getSessionUser();
 
   return (
-    <div className="flex min-h-dvh flex-col bg-white">
-      <Header tel={tel} user={user ? { name: user.name } : null} />
-      <main className="min-h-[70dvh] flex-1">{children}</main>
-      <Footer tel={tel} companyInfo={settings.company_info || ""} />
-      {floating.length > 0 && <FloatingLinks buttons={floating} />}
-      <BottomNav />
-    </div>
+    <WishlistProvider loggedIn={!!user}>
+      <div className="flex min-h-dvh flex-col bg-white">
+        <Header tel={tel} user={user ? { name: user.name } : null} />
+        <main className="min-h-[70dvh] flex-1">{children}</main>
+        <Footer tel={tel} companyInfo={settings.company_info || ""} />
+        {floating.length > 0 && <FloatingLinks buttons={floating} />}
+        <BottomNav />
+      </div>
+    </WishlistProvider>
   );
 }

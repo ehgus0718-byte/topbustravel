@@ -2,6 +2,8 @@ import Link from "next/link";
 import ProductCard from "@/components/product/ProductCard";
 import HomePopup from "@/components/home/HomePopup";
 import HeroSlider from "@/components/home/HeroSlider";
+import SearchBar from "@/components/home/SearchBar";
+import RecentlyViewed from "@/components/home/RecentlyViewed";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getCategories, getProducts } from "@/lib/api/products";
 import { getActivePopups, type Popup } from "@/lib/api/popups";
@@ -69,7 +71,10 @@ export default async function HomePage() {
       )}
 
       <div className="mx-auto max-w-6xl md:px-6">
-        {/* 카테고리 */}
+        {/* 검색 + 카테고리 — 히어로 바로 아래, 하나의 탐색 영역 */}
+        <section className="px-4 pt-4 md:px-0 md:pt-6">
+          <SearchBar />
+        </section>
         {categories.length > 0 && (
           <section className="flex gap-2 overflow-x-auto px-4 py-4 no-scrollbar md:px-0 md:py-6">
             <Chip href="/products" label="전체" />
@@ -90,6 +95,9 @@ export default async function HomePage() {
             </div>
           </section>
         )}
+
+        {/* 최근 본 상품 — 로그인 여부 무관, 브라우저 기기별 로컬 기록 */}
+        <RecentlyViewed />
 
         {/* 전체 상품 */}
         <section className="pb-8 pt-4 md:pb-16 md:pt-8">

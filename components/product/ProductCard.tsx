@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Product } from "@/types";
 import { won } from "@/lib/format";
+import WishlistButton from "./WishlistButton";
 
 export default function ProductCard({
   product,
@@ -36,11 +37,14 @@ export default function ProductCard({
         <span className="absolute left-2.5 top-2.5 rounded-lg bg-ink/70 px-2 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
           {product.duration_text}
         </span>
-        {product.is_featured && (
-          <span className="absolute right-2.5 top-2.5 rounded-lg bg-accent px-2 py-1 text-[11px] font-bold text-white">
-            추천
-          </span>
-        )}
+        <div className="absolute right-2.5 top-2.5 flex flex-col items-end gap-1.5">
+          <WishlistButton productId={product.id} />
+          {product.is_featured && (
+            <span className="rounded-lg bg-accent px-2 py-1 text-[11px] font-bold text-white">
+              추천
+            </span>
+          )}
+        </div>
       </div>
       <div className="mt-2.5 px-0.5">
         {product.category?.name && (

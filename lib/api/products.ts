@@ -19,7 +19,7 @@ export async function getCategories(sb: SupabaseClient): Promise<Category[]> {
 
 export async function getProducts(
   sb: SupabaseClient,
-  opts: { categorySlug?: string; featuredOnly?: boolean; limit?: number } = {}
+  opts: { categorySlug?: string; featuredOnly?: boolean; limit?: number; q?: string } = {}
 ): Promise<Product[]> {
   let q = sb
     .from("products")
@@ -29,11 +29,42 @@ export async function getProducts(
 
   if (opts.categorySlug) q = q.eq("category.slug", opts.categorySlug);
   if (opts.featuredOnly) q = q.eq("is_featured", true);
+  if (opts.q?.trim()) {
+    const kw = opts.q.trim().slice(0, 50);
+    q = q.or(`title.ilike.%${kw}%,summary.ilike.%${kw}%`);
+  }
   if (opts.limit) q = q.limit(opts.limit);
 
   const { data, error } = await q;
   if (error) throw error;
   return (data ?? []) as Product[];
+}
+
+/** 검색 자동완성 — 상품명 앞부분 일치 우선, 최대 6개 */
+export async function searchSuggestions(sb: SupabaseClient, keyword: string) {
+  const kw = keyword.trim().slice(0, 50);
+  if (!kw) return [];
+  const { data, error } = await sb
+    .from("products")
+    .select("id, title, slug, thumbnail_url")
+    .eq("is_active", true)
+    .ilike("title", `%${kw}%`)
+    .limit(6);
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** id 목록으로 상품 조회 (최근 본 상품용) — 입력 순서를 보존해 반환 */
+export async function getProductsByIds(sb: SupabaseClient, ids: string[]): Promise<Product[]> {
+  if (ids.length === 0) return [];
+  const { data, error } = await sb
+    .from("products")
+    .select("*, category:categories(name, slug)")
+    .eq("is_active", true)
+    .in("id", ids);
+  if (error) throw error;
+  const byId = new Map((data ?? []).map((p: any) => [p.id, p]));
+  return ids.map((id) => byId.get(id)).filter(Boolean) as Product[];
 }
 
 export async function getProductBySlug(

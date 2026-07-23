@@ -66,6 +66,16 @@ export default function Header({
             <UserIcon />
             {authLabel}
           </Link>
+          <Link
+            href="/my#wishlist"
+            onClick={close}
+            aria-label="찜한 여행"
+            className={`flex h-10 w-10 items-center justify-center rounded-full text-ink transition hover:bg-canvas ${
+              pathname === "/my" ? "text-primary" : ""
+            }`}
+          >
+            <HeartIcon />
+          </Link>
           <a
             href={`tel:${tel.replace(/-/g, "")}`}
             className="flex items-center gap-1.5 rounded-full bg-primary-soft px-3 py-1.5 text-sm font-semibold text-primary md:px-4 md:py-2"
@@ -137,6 +147,14 @@ function UserIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+    </svg>
+  );
+}
+
+function HeartIcon() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z" />
     </svg>
   );
 }

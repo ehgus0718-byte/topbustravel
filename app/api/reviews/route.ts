@@ -13,17 +13,21 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { product_id, rating, content } = await req.json();
+    const { product_id, rating, content, image_urls } = await req.json();
     if (!product_id || !content?.trim()) {
       return NextResponse.json({ error: "필수 정보가 누락되었습니다." }, { status: 400 });
     }
     const r = Math.min(5, Math.max(1, Number(rating) || 5));
+    const photos = Array.isArray(image_urls)
+      ? image_urls.filter((u) => typeof u === "string" && u.startsWith("http")).slice(0, 6)
+      : [];
     const sb = createAdminSupabase();
     const { error } = await sb.from("reviews").insert({
       product_id,
       author_name: maskName(user.name || "고객"),
       rating: r,
       content: String(content).trim().slice(0, 1000),
+      image_urls: photos,
       is_visible: false,
     });
     if (error) throw error;

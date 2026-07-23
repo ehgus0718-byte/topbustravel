@@ -6,6 +6,7 @@ import { getProductBySlug, getProducts } from "@/lib/api/products";
 import { getSettings } from "@/lib/api/settings";
 import { getSessionUser } from "@/lib/session";
 import DetailClient from "@/components/product/DetailClient";
+import ViewTracker from "@/components/product/ViewTracker";
 
 export const dynamic = "force-dynamic";
 
@@ -88,6 +89,7 @@ export default async function ProductDetailPage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      <ViewTracker productId={product.id} />
       <DetailClient
         product={product}
         tel={settings.tel || "042-000-0000"}
