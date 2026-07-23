@@ -14,6 +14,7 @@ import type { HeroSlide } from "@/lib/api/heroSlides";
 export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false); // 일시정지 버튼
+  const [hovering, setHovering] = useState(false);
   const [userNavigated, setUserNavigated] = useState(false); // 직접 조작하면 자동재생 중단
   const [reducedMotion, setReducedMotion] = useState(false);
   const dragStartX = useRef<number | null>(null);
@@ -38,14 +39,14 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
 
   // 자동재생 (6초)
   useEffect(() => {
-    if (count <= 1 || paused || userNavigated || reducedMotion) return;
+    if (count <= 1 || paused || hovering || userNavigated) return;
     const t = setInterval(() => {
       if (document.visibilityState === "visible") {
         setIndex((i) => (i + 1) % count);
       }
     }, 6000);
     return () => clearInterval(t);
-  }, [count, paused, userNavigated, reducedMotion]);
+  }, [count, paused, hovering, userNavigated]);
 
   // 스와이프 / 드래그
   const onPointerDown = (e: React.PointerEvent) => {
@@ -72,6 +73,8 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
       aria-roledescription="carousel"
       aria-label="추천 여행 슬라이드"
       className="group relative select-none overflow-hidden bg-ink"
+      onMouseEnter={() => setHovering(true)}
+      onMouseLeave={() => setHovering(false)}
       onPointerDown={onPointerDown}
       onPointerUp={onPointerUp}
       onPointerCancel={() => (dragStartX.current = null)}
