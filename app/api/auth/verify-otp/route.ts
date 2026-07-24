@@ -7,6 +7,7 @@ import {
   SESSION_COOKIE,
   sessionCookieOptions,
 } from "@/lib/session";
+import { isPastDue, purgeWithdrawnUser, formatKoreanDate } from "@/lib/account";
 
 /**
  * POST /api/auth/verify-otp { phone, code }
@@ -69,9 +70,26 @@ export async function POST(req: Request) {
     // 기존 회원 여부 확인
     const { data: user } = await sb
       .from("users")
-      .select("id, name")
+      .select("id, name, withdraw_scheduled_at")
       .eq("phone", phone)
       .maybeSingle();
+
+    // 탈퇴 신청 상태 처리
+    if (user?.withdraw_scheduled_at) {
+      if (isPastDue(user.withdraw_scheduled_at)) {
+        // 유예 종료 — 이 시점에 실제로 정리하고 신규 가입으로 안내
+        await purgeWithdrawnUser(sb, user.id);
+        const signupToken = await signToken({ t: "signup", phone }, 600);
+        return NextResponse.json({ status: "need_signup", signupToken });
+      }
+      // 유예 중 — 바로 로그인시키지 않고 탈퇴 취소 여부를 묻는다
+      const restoreToken = await signToken({ t: "restore", uid: user.id }, 600);
+      return NextResponse.json({
+        status: "withdraw_pending",
+        restoreToken,
+        scheduledText: formatKoreanDate(user.withdraw_scheduled_at),
+      });
+    }
 
     if (user) {
       await sb

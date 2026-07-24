@@ -23,6 +23,7 @@ function LoginFlow() {
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [agree, setAgree] = useState(false);
+  const [restore, setRestore] = useState<{ token: string; scheduledText: string } | null>(null);
   const [signupToken, setSignupToken] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -86,10 +87,36 @@ function LoginFlow() {
         router.refresh();
         return;
       }
+      if (data.status === "withdraw_pending") {
+        setRestore({ token: data.restoreToken, scheduledText: data.scheduledText });
+        return;
+      }
       setSignupToken(data.signupToken);
       setStep("signup");
     } catch (e: any) {
       setError(e.message || "인증에 실패했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function cancelWithdraw() {
+    if (!restore) return;
+    setError("");
+    setLoading(true);
+    try {
+      const res = await fetch("/api/account/withdraw/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restoreToken: restore.token }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      router.replace(next);
+      router.refresh();
+    } catch (e: any) {
+      setError(e.message || "처리에 실패했습니다.");
+      setRestore(null);
     } finally {
       setLoading(false);
     }
@@ -117,6 +144,43 @@ function LoginFlow() {
 
   const mmss = (s: number) =>
     `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+
+  if (restore) {
+    return (
+      <div className="px-5 pb-16 pt-10 md:pt-16">
+        <h1 className="text-[22px] font-extrabold md:text-3xl">탈퇴 예정인 계정입니다</h1>
+        <p className="mt-2 text-[14px] leading-relaxed text-ink">
+          <b>{restore.scheduledText}</b>에 탈퇴가 완료됩니다.
+        </p>
+        <p className="mt-1.5 text-[13px] leading-relaxed text-sub">
+          계속 이용하시려면 탈퇴를 취소해 주세요. 취소하시면 기존 정보와 찜한 여행이 그대로
+          유지됩니다.
+        </p>
+        {error && (
+          <p className="mt-4 rounded-xl bg-accent/10 px-4 py-3 text-[13px] font-semibold text-accent" role="alert">
+            {error}
+          </p>
+        )}
+        <button
+          onClick={cancelWithdraw}
+          disabled={loading}
+          className="mt-6 h-12 w-full rounded-xl bg-primary text-[15px] font-bold text-white disabled:opacity-40"
+        >
+          {loading ? "처리 중..." : "탈퇴 취소하고 로그인"}
+        </button>
+        <button
+          onClick={() => {
+            setRestore(null);
+            setStep("phone");
+            setCode("");
+          }}
+          className="mt-3 w-full py-1 text-center text-[13px] font-medium text-faint underline-offset-2 hover:underline"
+        >
+          그대로 탈퇴 진행하기
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="px-5 pb-16 pt-10 md:pt-16">

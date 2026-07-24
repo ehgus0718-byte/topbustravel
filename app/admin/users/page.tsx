@@ -9,6 +9,38 @@ export default function AdminUsersPage() {
   const [q, setQ] = useState("");
   const [list, setList] = useState<any[] | null>(null);
   const [toast, setToast] = useState("");
+  const [editing, setEditing] = useState<string | null>(null);
+  const [form, setForm] = useState({ name: "", phone: "" });
+  const [saving, setSaving] = useState(false);
+
+  const saveUser = async (u: any) => {
+    const phoneChanged = form.phone.replace(/\D/g, "") !== (u.phone || "").replace(/\D/g, "");
+    if (
+      phoneChanged &&
+      !confirm(
+        `휴대폰 번호를 변경합니다.\n\n${u.phone} → ${form.phone}\n\n이 번호로 로그인하게 됩니다. 계속할까요?`
+      )
+    ) {
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/users/${u.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setToast("회원 정보를 수정했습니다");
+      setEditing(null);
+      load();
+    } catch (e: any) {
+      alert(e.message || "수정에 실패했습니다.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const load = () => {
     const params = new URLSearchParams();
@@ -95,6 +127,53 @@ export default function AdminUsersPage() {
                   <span>가입 {fmtDateTime(u.created_at)}</span>
                   {u.last_login_at && <span>최근접속 {fmtDateTime(u.last_login_at)}</span>}
                 </div>
+
+                {editing === u.id ? (
+                  <div className="mt-3 rounded-lg bg-canvas p-3">
+                    <p className="text-[12px] font-semibold text-sub">회원 정보 수정</p>
+                    <input
+                      value={form.name}
+                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      placeholder="이름"
+                      className="mt-2 w-full min-w-0 rounded-lg border border-line bg-white px-3 py-2.5 text-[14px] outline-none focus:border-primary"
+                    />
+                    <input
+                      value={form.phone}
+                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                      placeholder="휴대폰 번호"
+                      className="mt-2 w-full min-w-0 rounded-lg border border-line bg-white px-3 py-2.5 text-[14px] outline-none focus:border-primary"
+                    />
+                    <p className="mt-2 text-[11px] leading-relaxed text-danger">
+                      번호는 로그인 수단입니다. 잘못 입력하면 그 번호를 가진 사람이 이 계정으로
+                      로그인하게 되니, 고객이 번호를 바꿔 로그인하지 못하는 경우에만 사용하세요.
+                    </p>
+                    <div className="mt-2.5 flex gap-2">
+                      <button
+                        onClick={() => setEditing(null)}
+                        className="h-10 flex-1 rounded-lg border border-line text-[13px] font-semibold text-sub"
+                      >
+                        취소
+                      </button>
+                      <button
+                        onClick={() => saveUser(u)}
+                        disabled={saving}
+                        className="h-10 flex-1 rounded-lg bg-primary text-[13px] font-bold text-white disabled:opacity-50"
+                      >
+                        {saving ? "저장 중..." : "저장"}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setForm({ name: u.name, phone: u.phone });
+                      setEditing(u.id);
+                    }}
+                    className="mt-2.5 rounded-lg border border-line px-2.5 py-1 text-[12px] font-semibold text-sub"
+                  >
+                    정보 수정
+                  </button>
+                )}
               </div>
             ))}
             {list.length === 0 && (

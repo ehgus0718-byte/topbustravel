@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/session";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { won, formatPhone } from "@/lib/format";
 import LogoutButton from "@/components/auth/LogoutButton";
+import AccountSettings from "@/components/auth/AccountSettings";
 import ProductCard from "@/components/product/ProductCard";
 import { getProductsByIds } from "@/lib/api/products";
 
@@ -28,7 +29,7 @@ export default async function MyPage() {
     .select(
       "id, status, adult_count, child_count, infant_count, total_amount, created_at, product:products(title), departure:departures(departure_date)"
     )
-    .eq("customer_phone", user.phone)
+    .or(`user_uid.eq.${user.uid},customer_phone.eq.${user.phone}`)
     .order("created_at", { ascending: false })
     .limit(50);
 
@@ -124,6 +125,9 @@ export default async function MyPage() {
           ))}
         </div>
       )}
+
+      <h2 className="mt-10 text-[16px] font-extrabold md:text-lg">내 정보</h2>
+      <AccountSettings initialName={user.name} initialPhone={user.phone} />
     </div>
   );
 }

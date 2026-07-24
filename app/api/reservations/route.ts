@@ -77,14 +77,15 @@ export async function POST(req: Request) {
     const total =
       adult_count * adultPrice + child_count * childPrice + infant_count * infantPrice;
 
-    // 참고: reservations 테이블에 customer_id 컬럼은 없음(현재 스키마 기준).
-    // 마이페이지 예약 내역은 customer_phone으로 매칭되는 기존 방식을 그대로 사용.
+    // 로그인 회원이면 회원 고유번호를 함께 저장한다.
+    // (전화번호만으로 매칭하면 번호 변경 시 과거 예약이 마이페이지에서 사라짐)
     const { data: reservation, error: insErr } = await sb
       .from("reservations")
       .insert({
         product_id: p.id,
         departure_id,
         boarding_point_id: boarding_point_id || null,
+        user_uid: user?.uid ?? null,
         customer_name,
         customer_phone,
         adult_count,
