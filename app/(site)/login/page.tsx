@@ -147,7 +147,7 @@ function LoginFlow() {
                 disabled={step === "code"}
                 onChange={(e) => setPhone(formatPhone(e.target.value))}
                 onKeyDown={(e) => e.key === "Enter" && step === "phone" && sendOtp()}
-                className="h-12 flex-1 rounded-xl border border-line px-4 text-[16px] font-medium outline-none focus:border-primary disabled:bg-canvas disabled:text-faint"
+                className="h-12 min-w-0 flex-1 rounded-xl border border-line px-4 text-[16px] font-medium outline-none focus:border-primary disabled:bg-canvas disabled:text-faint"
               />
               {step === "code" && (
                 <button
