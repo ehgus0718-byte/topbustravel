@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 const TABS = [
   { href: "/", label: "홈", icon: HomeIcon },
   { href: "/products", label: "여행상품", icon: BusIcon },
+  { href: "/my#wishlist", match: "/my", label: "찜", icon: HeartIcon },
   { href: "/reservation/lookup", label: "예약조회", icon: TicketIcon },
   { href: "/contact", label: "문의", icon: ChatIcon },
 ];
@@ -19,10 +20,11 @@ export default function BottomNav() {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white pb-[env(safe-area-inset-bottom)] md:hidden">
-      <div className="grid grid-cols-4">
-        {TABS.map(({ href, label, icon: Icon }) => {
+      <div className="grid grid-cols-5">
+        {TABS.map(({ href, match, label, icon: Icon }) => {
+          const base = match ?? href;
           const active =
-            href === "/" ? pathname === "/" : pathname.startsWith(href);
+            base === "/" ? pathname === "/" : pathname.startsWith(base);
           return (
             <Link
               key={href}
@@ -41,6 +43,13 @@ export default function BottomNav() {
   );
 }
 
+function HeartIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z" />
+    </svg>
+  );
+}
 function HomeIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>

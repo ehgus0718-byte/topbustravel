@@ -70,7 +70,7 @@ export default function Header({
             href="/my#wishlist"
             onClick={close}
             aria-label="찜한 여행"
-            className={`flex h-10 w-10 items-center justify-center rounded-full text-ink transition hover:bg-canvas ${
+            className={`hidden h-10 w-10 items-center justify-center rounded-full text-ink transition hover:bg-canvas md:flex ${
               pathname === "/my" ? "text-primary" : ""
             }`}
           >

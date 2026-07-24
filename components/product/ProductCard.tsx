@@ -34,16 +34,18 @@ export default function ProductCard({
             이미지 준비중
           </div>
         )}
-        <span className="absolute left-2.5 top-2.5 rounded-lg bg-ink/70 px-2 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
-          {product.duration_text}
-        </span>
-        <div className="absolute right-2.5 top-2.5 flex flex-col items-end gap-1.5">
-          <WishlistButton productId={product.id} />
+        <div className="absolute left-2.5 top-2.5 flex flex-col items-start gap-1.5">
+          <span className="rounded-lg bg-ink/70 px-2 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
+            {product.duration_text}
+          </span>
           {product.is_featured && (
             <span className="rounded-lg bg-accent px-2 py-1 text-[11px] font-bold text-white">
               추천
             </span>
           )}
+        </div>
+        <div className="absolute right-2.5 top-2.5">
+          <WishlistButton productId={product.id} />
         </div>
       </div>
       <div className="mt-2.5 px-0.5">

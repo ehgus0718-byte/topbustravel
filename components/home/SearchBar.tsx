@@ -104,8 +104,8 @@ export default function SearchBar() {
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onFocus={() => setFocused(true)}
-            placeholder="어디로 떠나고 싶으세요? (지역, 상품명)"
-            className="h-full flex-1 bg-transparent text-[14px] text-ink outline-none placeholder:text-faint md:text-[15px]"
+            placeholder="어디로 떠나고 싶으세요?"
+            className="h-full w-full min-w-0 flex-1 bg-transparent text-[16px] text-ink outline-none placeholder:text-faint"
             autoComplete="off"
           />
           {value && (
