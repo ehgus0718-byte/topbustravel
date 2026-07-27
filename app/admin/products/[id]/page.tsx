@@ -275,38 +275,56 @@ export default function AdminProductEditPage() {
         {/* 탑승지 */}
         <Field label="탑승지">
           <div className="space-y-2">
-            {boarding.map((b, i) => (
-              <div key={i} className="flex gap-2">
-                <input
-                  value={b.boarding_time ?? ""}
-                  onChange={(e) => {
-                    const n = [...boarding];
-                    n[i] = { ...n[i], boarding_time: e.target.value };
-                    setBoarding(n);
-                  }}
-                  placeholder="07:00"
-                  className="w-20 rounded-xl border border-line px-3 py-2.5 text-[13px]"
-                />
-                <input
-                  value={b.name ?? ""}
-                  onChange={(e) => {
-                    const n = [...boarding];
-                    n[i] = { ...n[i], name: e.target.value };
-                    setBoarding(n);
-                  }}
-                  placeholder="탑승지 이름"
-                  className="flex-1 rounded-xl border border-line px-3 py-2.5 text-[13px]"
-                />
-                <button
-                  onClick={() => setBoarding(boarding.filter((_, j) => j !== i))}
-                  className="shrink-0 text-[13px] text-danger"
+            {boarding.map((b, i) => {
+              const upd = (patch: any) => {
+                const n = [...boarding];
+                n[i] = { ...n[i], ...patch };
+                setBoarding(n);
+              };
+              return (
+                <div
+                  key={b.id ?? `new-${i}`}
+                  className="space-y-2 rounded-xl border border-line p-3"
                 >
-                  삭제
-                </button>
-              </div>
-            ))}
+                  <div className="flex gap-2">
+                    <input
+                      value={b.boarding_time ?? ""}
+                      onChange={(e) => upd({ boarding_time: e.target.value })}
+                      placeholder="07:00"
+                      className="w-20 rounded-xl border border-line px-3 py-2.5 text-[13px]"
+                    />
+                    <input
+                      value={b.name ?? ""}
+                      onChange={(e) => upd({ name: e.target.value })}
+                      placeholder="탑승지 이름"
+                      className="flex-1 rounded-xl border border-line px-3 py-2.5 text-[13px]"
+                    />
+                    <button
+                      onClick={() =>
+                        setBoarding(boarding.filter((_, j) => j !== i))
+                      }
+                      className="shrink-0 text-[13px] text-danger"
+                    >
+                      삭제
+                    </button>
+                  </div>
+                  <input
+                    value={b.address ?? ""}
+                    onChange={(e) => upd({ address: e.target.value })}
+                    placeholder="주소 (비우면 상세페이지에 길찾기 버튼이 안 나옵니다)"
+                    className="w-full rounded-xl border border-line px-3 py-2.5 text-[13px]"
+                  />
+                  <input
+                    value={b.memo ?? ""}
+                    onChange={(e) => upd({ memo: e.target.value })}
+                    placeholder="안내 메모 (예: 3번 출구 버스전용 정차구역)"
+                    className="w-full rounded-xl border border-line px-3 py-2.5 text-[13px]"
+                  />
+                </div>
+              );
+            })}
             <button
-              onClick={() => setBoarding([...boarding, { name: "", boarding_time: "" }])}
+              onClick={() => setBoarding([...boarding, { name: "", boarding_time: "", address: "", memo: "" }])}
               className="rounded-xl border border-line px-3 py-2 text-[13px] font-semibold text-sub"
             >
               + 탑승지 추가

@@ -1,16 +1,8 @@
-import { type NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-// 임시 진단 라우트 (HTTPS 강제 적용 검증용 — 검증 완료 후 삭제 예정)
-// 프록시가 앱에 어떤 프로토콜 정보를 전달하는지 확인한다.
-export const dynamic = "force-dynamic";
-
-export async function GET(req: NextRequest) {
-  return NextResponse.json({
-    xForwardedProto: req.headers.get("x-forwarded-proto"),
-    xForwardedHost: req.headers.get("x-forwarded-host"),
-    host: req.headers.get("host"),
-    forceHttpsEnabled: process.env.FORCE_HTTPS === "1",
-    nodeEnv: process.env.NODE_ENV,
-    time: new Date().toISOString(),
-  });
+// 진단용 임시 라우트였음 — 운영에서 더 이상 노출하지 않는다.
+// (GitHub 웹 업로드로는 파일 삭제가 불가해 404 스텁으로 대체.
+//  다음 작업 때 app/api/debug 폴더째 삭제할 것)
+export async function GET() {
+  return new NextResponse(null, { status: 404 });
 }

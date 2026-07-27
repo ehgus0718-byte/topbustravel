@@ -112,6 +112,20 @@ export default function DetailClient({
   const calendarRef = useRef<HTMLDivElement>(null);
   const [pulse, setPulse] = useState(false);
   const [activeSection, setActiveSection] = useState<string>(SECTIONS[0].id);
+  const [copiedBp, setCopiedBp] = useState<string | null>(null);
+
+  // 탑승지 주소 복사 — 클립보드가 막힌 환경에서도 화면이 깨지지 않도록 실패는 무시
+  const copyAddress = async (id: string, address: string) => {
+    try {
+      const nav = typeof navigator !== "undefined" ? navigator : undefined;
+      if (!nav?.clipboard) return;
+      await nav.clipboard.writeText(address);
+      setCopiedBp(id);
+      setTimeout(() => setCopiedBp(null), 1500);
+    } catch {
+      /* 복사 미지원 브라우저 — 주소는 화면에 그대로 노출되어 있음 */
+    }
+  };
   const [shareState, setShareState] = useState<"idle" | "copied">("idle");
 
   const avgRating = useMemo(() => {
@@ -425,13 +439,50 @@ export default function DetailClient({
         {product.boarding_points.length > 0 && (
           <div className="mb-5 rounded-2xl border border-line p-4">
             <p className="mb-2.5 text-[13px] font-bold text-primary">🚌 탑승지 안내</p>
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {product.boarding_points.map((b) => (
-                <li key={b.id} className="flex items-center gap-2.5 text-[14px]">
-                  <span className="w-12 shrink-0 font-bold text-ink">
-                    {b.boarding_time}
-                  </span>
-                  <span className="text-sub">{b.name}</span>
+                <li key={b.id} className="text-[14px]">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-12 shrink-0 font-bold text-ink">
+                      {b.boarding_time}
+                    </span>
+                    <span className="text-sub">{b.name}</span>
+                  </div>
+                  {b.address && (
+                    <div className="mt-1 pl-[3.625rem]">
+                      <p className="text-[13px] leading-relaxed text-faint">
+                        {b.address}
+                      </p>
+                      {b.memo && (
+                        <p className="mt-0.5 text-[12px] leading-relaxed text-faint">
+                          {b.memo}
+                        </p>
+                      )}
+                      <div className="mt-2 flex gap-1.5">
+                        <a
+                          href={`https://map.kakao.com/link/search/${encodeURIComponent(
+                            b.address
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-lg border border-line px-2.5 py-1.5 text-[12px] font-semibold text-sub"
+                        >
+                          길찾기
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => copyAddress(b.id, b.address!)}
+                          className={`rounded-lg border px-2.5 py-1.5 text-[12px] font-semibold ${
+                            copiedBp === b.id
+                              ? "border-success text-success"
+                              : "border-line text-sub"
+                          }`}
+                        >
+                          {copiedBp === b.id ? "복사됨" : "주소 복사"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>

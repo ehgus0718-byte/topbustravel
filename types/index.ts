@@ -55,6 +55,10 @@ export interface BoardingPoint {
   product_id: string;
   name: string;
   boarding_time: string | null;
+  address: string | null;
+  memo: string | null;
+  lat: number | null;
+  lng: number | null;
   sort_order: number;
 }
 
