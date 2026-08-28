@@ -13,15 +13,25 @@ export default function Footer({
         <div className="md:flex md:items-start md:justify-between md:gap-10">
           <div>
             <p className="mb-2 text-sm font-bold text-sub">topBustravel</p>
-            <p>
-              상호 소망투어 · 대표 이도현
-              <br />
-              사업자등록번호 781-69-00237 · 통신판매업신고 2020-대전서구-0689
-              <br />
-              관광사업등록 제2018-000008호
-              <br />
-              대전광역시 서구 청사서로 29 · ehgus0718@naver.com
-            </p>
+            {companyInfo?.trim() ? (
+              <p>
+                {companyInfo
+                  .split("|")
+                  .map((s) => s.trim())
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+            ) : (
+              <p>
+                상호 소망투어 · 대표 이도현
+                <br />
+                사업자등록번호 781-69-00237 · 통신판매업신고 2020-대전서구-0689
+                <br />
+                관광사업등록 제2018-000008호
+                <br />
+                대전광역시 서구 청사서로 29 · ehgus0718@naver.com
+              </p>
+            )}
           </div>
           <div className="mt-3 shrink-0 md:mt-0 md:text-right">
             <p>
