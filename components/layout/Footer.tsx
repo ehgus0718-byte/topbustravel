@@ -5,23 +5,25 @@ export default function Footer({
   companyInfo,
 }: {
   tel: string;
-  companyInfo?: string;
-}) {
-  return (
-    <footer className="border-t border-line bg-canvas">
-      <div className="mx-auto max-w-6xl px-4 py-8 pb-24 text-xs leading-relaxed text-faint md:px-6 md:py-10 md:pb-10">
-        <div className="md:flex md:items-start md:justify-between md:gap-10">
-          <div>
-            <p className="mb-2 text-sm font-bold text-sub">topBustravel</p>
-            {companyInfo?.trim() ? (
-              <p>
-                {companyInfo
-                  .split("|")
-                  .map((s) => s.trim())
-                  .filter(Boolean)
-                  .join(" · ")}
-              </p>
-            ) : (
+{companyInfo?.trim() ? (
+  <p>
+    {companyInfo
+      .split(/\r?\n/)
+      .map((line) =>
+        line
+          .split("|")
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .join(" · ")
+      )
+      .filter(Boolean)
+      .map((line, i) => (
+        <span key={i} className="block">
+          {line}
+        </span>
+      ))}
+  </p>
+) : (
               <p>
                 상호 소망투어 · 대표 이도현
                 <br />
