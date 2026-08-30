@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import type { Departure, ProductDetail } from "@/types";
 import { won, fmtDate, formatPhone } from "@/lib/format";
 
@@ -71,6 +72,7 @@ export default function ReserveClient({
   const [memo, setMemo] = useState("");
   const [payMethod, setPayMethod] = useState<"card" | "bank">("card");
   const [agreed, setAgreed] = useState(false);
+  const [agreedPrivacy, setAgreedPrivacy] = useState(false);
   const [busy, setBusy] = useState(false);
 
   // 결제 모듈 미리 로드 (빵버스 패턴)
@@ -101,6 +103,8 @@ export default function ReserveClient({
     if (totalPeople > remaining)
       return alert(`잔여 좌석이 ${remaining}석입니다. 인원을 조정해 주세요.`);
     if (!agreed) return alert("취소/환불 규정에 동의해 주세요.");
+    if (!agreedPrivacy)
+      return alert("개인정보 수집·이용에 동의해 주세요.");
 
     setBusy(true);
     try {
@@ -336,8 +340,35 @@ export default function ReserveClient({
             className="mt-0.5 h-4.5 w-4.5 accent-primary"
           />
           <span className="text-[13px] leading-relaxed text-sub">
-            상품의 <b className="text-ink">취소/환불 규정</b>을 확인했으며 이에
-            동의합니다. (상세 페이지 하단 참고)
+            <b className="text-ink">[필수]</b> 상품의 취소/환불 규정을 확인했으며 이에
+            동의합니다.{" "}
+            <Link
+              href="/refund"
+              target="_blank"
+              className="font-semibold text-primary underline underline-offset-2"
+            >
+              규정 보기
+            </Link>
+          </span>
+        </label>
+        <label className="mt-2.5 flex items-start gap-2.5 px-1">
+          <input
+            type="checkbox"
+            checked={agreedPrivacy}
+            onChange={(e) => setAgreedPrivacy(e.target.checked)}
+            className="mt-0.5 h-4.5 w-4.5 accent-primary"
+          />
+          <span className="text-[13px] leading-relaxed text-sub">
+            <b className="text-ink">[필수]</b> 개인정보 수집·이용에 동의합니다. 예약자
+            성명과 연락처는 예약 확인과 출발 안내에만 사용되며, 관련 법령에 따라
+            보관됩니다.{" "}
+            <Link
+              href="/privacy"
+              target="_blank"
+              className="font-semibold text-primary underline underline-offset-2"
+            >
+              처리방침
+            </Link>
           </span>
         </label>
       </Section>

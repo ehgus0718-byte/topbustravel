@@ -1,6 +1,7 @@
 "use client";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 
 export default function LoginPage() {
   return (
@@ -322,8 +323,25 @@ function LoginFlow() {
                 className="mt-0.5 h-4.5 w-4.5 accent-[var(--color-primary)]"
               />
               <span className="text-[13px] leading-relaxed text-sub">
-                <b className="text-ink">[필수]</b> 이용약관 및 개인정보 수집·이용에
-                동의합니다. (이름·휴대폰 번호는 예약 확인과 알림 발송에만 사용됩니다)
+                <b className="text-ink">[필수]</b>{" "}
+                <Link
+                  href="/terms"
+                  target="_blank"
+                  onClick={(e) => e.stopPropagation()}
+                  className="font-semibold text-primary underline underline-offset-2"
+                >
+                  이용약관
+                </Link>{" "}
+                및{" "}
+                <Link
+                  href="/privacy"
+                  target="_blank"
+                  onClick={(e) => e.stopPropagation()}
+                  className="font-semibold text-primary underline underline-offset-2"
+                >
+                  개인정보 수집·이용
+                </Link>
+                에 동의합니다. (이름·휴대폰 번호는 예약 확인과 알림 발송에만 사용됩니다)
               </span>
             </label>
             <button
