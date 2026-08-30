@@ -65,6 +65,23 @@ export default function Footer({
                 단체여행 견적문의
               </Link>
             </p>
+            <p className="mt-2 space-x-3">
+              <Link href="/terms" className="underline-offset-2 hover:underline">
+                이용약관
+              </Link>
+              <Link
+                href="/privacy"
+                className="font-bold text-sub underline-offset-2 hover:underline"
+              >
+                개인정보처리방침
+              </Link>
+              <Link href="/travel-terms" className="underline-offset-2 hover:underline">
+                국내여행약관
+              </Link>
+              <Link href="/refund" className="underline-offset-2 hover:underline">
+                취소·환불규정
+              </Link>
+            </p>
             <p className="mt-3">
               © {new Date().getFullYear()} topBustravel. All rights reserved.
             </p>
