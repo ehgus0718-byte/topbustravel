@@ -268,9 +268,13 @@ function LoginFlow() {
                   }`}
                   aria-live="polite"
                 >
-                  {ttl > 0 ? mmss(ttl) : "만료됨"}
+                  {ttl > 0 ? `남은 시간 ${mmss(ttl)}` : "만료됨"}
                 </span>
               </div>
+              <p className="mt-1.5 text-[12px] leading-relaxed text-faint">
+                문자로 받은 6자리를 3분 안에 입력해 주세요. 문자가 오지 않으면 아래에서 다시 받을
+                수 있어요.
+              </p>
             </div>
             <button
               type="button"
@@ -286,7 +290,7 @@ function LoginFlow() {
               disabled={cooldown > 0 || loading}
               className="w-full py-1 text-center text-[13px] font-medium text-faint underline-offset-2 hover:underline disabled:no-underline disabled:opacity-50"
             >
-              {cooldown > 0 ? `인증번호 재발송 (${cooldown}초 후)` : "인증번호 재발송"}
+              {cooldown > 0 ? `${cooldown}초 뒤 재발송할 수 있어요` : "인증번호 재발송"}
             </button>
           </>
         )}
