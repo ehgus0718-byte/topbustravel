@@ -280,10 +280,22 @@
       "namedRegex": "^/notices(?:/)?$"
     },
     {
+      "page": "/privacy",
+      "regex": "^/privacy(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/privacy(?:/)?$"
+    },
+    {
       "page": "/products",
       "regex": "^/products(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/products(?:/)?$"
+    },
+    {
+      "page": "/refund",
+      "regex": "^/refund(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/refund(?:/)?$"
     },
     {
       "page": "/reservation/complete",
@@ -320,6 +332,18 @@
       "regex": "^/sitemap\\.xml(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/sitemap\\.xml(?:/)?$"
+    },
+    {
+      "page": "/terms",
+      "regex": "^/terms(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/terms(?:/)?$"
+    },
+    {
+      "page": "/travel-terms",
+      "regex": "^/travel\\-terms(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/travel\\-terms(?:/)?$"
     }
   ],
   "dataRoutes": [],
