@@ -32,6 +32,26 @@ function LoginFlow() {
   const [cooldown, setCooldown] = useState(0); // 재발송 대기 초
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // 카카오 콜백에서 돌아온 경우 처리 (토큰은 URL에서 즉시 제거)
+  useEffect(() => {
+    const kakaoError = params.get("kakaoError");
+    const kakaoSignup = params.get("kakaoSignup");
+    const kakaoName = params.get("kakaoName");
+    if (!kakaoError && !kakaoSignup) return;
+
+    if (kakaoError) setError(kakaoError);
+    if (kakaoSignup) {
+      setSignupToken(kakaoSignup);
+      if (kakaoName) setName(kakaoName);
+      setStep("signup");
+    }
+    const clean = new URL(window.location.href);
+    ["kakaoError", "kakaoSignup", "kakaoName"].forEach((k) =>
+      clean.searchParams.delete(k)
+    );
+    window.history.replaceState(null, "", clean.pathname + clean.search);
+  }, [params]);
+
   useEffect(() => {
     timerRef.current = setInterval(() => {
       setTtl((v) => (v > 0 ? v - 1 : 0));
@@ -241,6 +261,29 @@ function LoginFlow() {
           >
             {loading ? "발송 중..." : "인증번호 받기"}
           </button>
+        )}
+
+        {/* STEP 1: 카카오로 로그인 */}
+        {step === "phone" && (
+          <>
+            <div className="flex items-center gap-3 pt-1">
+              <span className="h-px flex-1 bg-line" />
+              <span className="text-[12px] text-faint">또는</span>
+              <span className="h-px flex-1 bg-line" />
+            </div>
+            <a
+              href={`/api/auth/kakao/start?next=${encodeURIComponent(next)}`}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#FEE500] text-[15px] font-bold text-[#191600] transition active:scale-[0.99]"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-current">
+                <path d="M12 3C6.99 3 3 6.19 3 10.13c0 2.52 1.66 4.73 4.16 5.99l-.9 3.32c-.08.29.25.52.5.35l3.98-2.63c.41.04.83.06 1.26.06 5.01 0 9-3.19 9-7.09S17.01 3 12 3z" />
+              </svg>
+              카카오로 로그인
+            </a>
+            <p className="text-center text-[12px] leading-relaxed text-faint">
+              카카오 계정의 이름과 휴대폰 번호로 로그인합니다.
+            </p>
+          </>
         )}
 
         {/* STEP 2: 인증번호 */}

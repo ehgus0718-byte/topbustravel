@@ -15,7 +15,9 @@ export async function POST(req: Request) {
   try {
     const { signupToken, name: rawName, agree } = await req.json();
 
-    const payload = await verifyToken<{ t: string; phone: string }>(signupToken);
+    const payload = await verifyToken<{ t: string; phone: string; kakaoId?: string }>(
+      signupToken
+    );
     if (!payload || payload.t !== "signup" || !payload.phone) {
       return NextResponse.json(
         { error: "인증이 만료되었습니다. 처음부터 다시 진행해 주세요." },
@@ -52,7 +54,10 @@ export async function POST(req: Request) {
       finalName = existing.name;
       await sb
         .from("users")
-        .update({ last_login_at: new Date().toISOString() })
+        .update({
+          last_login_at: new Date().toISOString(),
+          ...(payload.kakaoId ? { kakao_id: payload.kakaoId } : {}),
+        })
         .eq("id", uid);
     } else {
       const { data: created, error: insErr } = await sb
@@ -61,6 +66,9 @@ export async function POST(req: Request) {
           phone: payload.phone,
           name,
           last_login_at: new Date().toISOString(),
+          ...(payload.kakaoId
+            ? { kakao_id: payload.kakaoId, signup_provider: "kakao" }
+            : {}),
         })
         .select("id")
         .single();
