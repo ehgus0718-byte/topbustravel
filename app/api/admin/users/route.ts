@@ -12,7 +12,7 @@ export async function GET(req: Request) {
     const sb = createAdminSupabase();
     let query = sb
       .from("users")
-      .select("id, name, phone, created_at, last_login_at")
+      .select("id, name, phone, created_at, last_login_at, kakao_id")
       .order("created_at", { ascending: false })
       .limit(200);
     if (q) {
@@ -43,8 +43,10 @@ export async function GET(req: Request) {
       stats.set(r.customer_phone, cur);
     }
 
-    const result = (users ?? []).map((u) => ({
+    // kakao_id 자체는 외부 식별자라 화면에 내보내지 않고 연결 여부만 전달
+    const result = (users ?? []).map(({ kakao_id, ...u }) => ({
       ...u,
+      kakaoLinked: Boolean(kakao_id),
       reservationCount: stats.get(u.phone)?.count ?? 0,
       totalSpent: stats.get(u.phone)?.spent ?? 0,
     }));

@@ -206,15 +206,38 @@ function LoginFlow() {
   return (
     <div className="px-5 pb-16 pt-10 md:pt-16">
       <h1 className="text-[22px] font-extrabold md:text-3xl">
-        {step === "signup" ? "가입을 완료해 주세요" : "휴대폰 번호로 로그인"}
+        {step === "signup" ? "가입을 완료해 주세요" : "로그인 / 회원가입"}
       </h1>
       <p className="mt-1.5 text-[13px] text-sub md:text-sm">
         {step === "signup"
           ? "인증이 완료되었습니다. 이름만 입력하면 끝이에요."
-          : "가입하지 않았어도 인증하면 자동으로 가입됩니다."}
+          : "처음이셔도 괜찮아요. 로그인하면 자동으로 가입됩니다."}
       </p>
 
       <div className="mt-7 space-y-4">
+        {/* 카카오로 로그인 — 가장 빠른 경로라 맨 위에 둔다 */}
+        {step === "phone" && (
+          <>
+            <a
+              href={`/api/auth/kakao/start?next=${encodeURIComponent(next)}`}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#FEE500] text-[15px] font-bold text-[#191600] transition active:scale-[0.99]"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-current">
+                <path d="M12 3C6.99 3 3 6.19 3 10.13c0 2.52 1.66 4.73 4.16 5.99l-.9 3.32c-.08.29.25.52.5.35l3.98-2.63c.41.04.83.06 1.26.06 5.01 0 9-3.19 9-7.09S17.01 3 12 3z" />
+              </svg>
+              카카오로 3초 만에 시작하기
+            </a>
+            <p className="text-center text-[12px] leading-relaxed text-faint">
+              카카오 계정의 이름과 휴대폰 번호를 사용합니다.
+            </p>
+            <div className="flex items-center gap-3 pt-1">
+              <span className="h-px flex-1 bg-line" />
+              <span className="text-[12px] text-faint">또는 휴대폰 번호로</span>
+              <span className="h-px flex-1 bg-line" />
+            </div>
+          </>
+        )}
+
         {/* STEP 1+2: 휴대폰 번호 */}
         {step !== "signup" && (
           <div>
@@ -263,28 +286,6 @@ function LoginFlow() {
           </button>
         )}
 
-        {/* STEP 1: 카카오로 로그인 */}
-        {step === "phone" && (
-          <>
-            <div className="flex items-center gap-3 pt-1">
-              <span className="h-px flex-1 bg-line" />
-              <span className="text-[12px] text-faint">또는</span>
-              <span className="h-px flex-1 bg-line" />
-            </div>
-            <a
-              href={`/api/auth/kakao/start?next=${encodeURIComponent(next)}`}
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#FEE500] text-[15px] font-bold text-[#191600] transition active:scale-[0.99]"
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-current">
-                <path d="M12 3C6.99 3 3 6.19 3 10.13c0 2.52 1.66 4.73 4.16 5.99l-.9 3.32c-.08.29.25.52.5.35l3.98-2.63c.41.04.83.06 1.26.06 5.01 0 9-3.19 9-7.09S17.01 3 12 3z" />
-              </svg>
-              카카오로 로그인
-            </a>
-            <p className="text-center text-[12px] leading-relaxed text-faint">
-              카카오 계정의 이름과 휴대폰 번호로 로그인합니다.
-            </p>
-          </>
-        )}
 
         {/* STEP 2: 인증번호 */}
         {step === "code" && (

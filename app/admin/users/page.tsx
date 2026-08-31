@@ -106,7 +106,18 @@ export default function AdminUsersPage() {
             {list.map((u) => (
               <div key={u.id} className="rounded-xl border border-line p-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-[14px] font-bold">{u.name}</p>
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <p className="truncate text-[14px] font-bold">{u.name}</p>
+                    {u.kakaoLinked ? (
+                      <span className="shrink-0 rounded-md bg-[#FEE500] px-1.5 py-0.5 text-[11px] font-bold text-[#191600]">
+                        카카오
+                      </span>
+                    ) : (
+                      <span className="shrink-0 rounded-md bg-canvas px-1.5 py-0.5 text-[11px] font-bold text-faint">
+                        휴대폰
+                      </span>
+                    )}
+                  </div>
                   <button
                     onClick={() => viewReservations(u.phone)}
                     className="rounded-lg border border-line px-2.5 py-1 text-[12px] font-semibold text-sub"
