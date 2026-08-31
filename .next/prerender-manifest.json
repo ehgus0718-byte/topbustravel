@@ -411,30 +411,6 @@
         "x-next-revalidate-tag-token"
       ]
     },
-    "/admin/settings": {
-      "experimentalBypassFor": [
-        {
-          "type": "header",
-          "key": "next-action"
-        },
-        {
-          "type": "header",
-          "key": "content-type",
-          "value": "multipart/form-data;.*"
-        }
-      ],
-      "initialRevalidateSeconds": false,
-      "srcRoute": "/admin/settings",
-      "dataRoute": "/admin/settings.rsc",
-      "allowHeader": [
-        "host",
-        "x-matched-path",
-        "x-prerender-revalidate",
-        "x-prerender-revalidate-if-generated",
-        "x-next-revalidated-tags",
-        "x-next-revalidate-tag-token"
-      ]
-    },
     "/admin/users": {
       "experimentalBypassFor": [
         {
@@ -458,13 +434,37 @@
         "x-next-revalidated-tags",
         "x-next-revalidate-tag-token"
       ]
+    },
+    "/admin/settings": {
+      "experimentalBypassFor": [
+        {
+          "type": "header",
+          "key": "next-action"
+        },
+        {
+          "type": "header",
+          "key": "content-type",
+          "value": "multipart/form-data;.*"
+        }
+      ],
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/admin/settings",
+      "dataRoute": "/admin/settings.rsc",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
     }
   },
   "dynamicRoutes": {},
   "notFoundRoutes": [],
   "preview": {
-    "previewModeId": "188dddcbc596ec253f3aa5d8385e18c8",
-    "previewModeSigningKey": "9b4179c0813015344fc3d22fddfbdd85d81bf82967e98d905a5784cf55e63e91",
-    "previewModeEncryptionKey": "bd614468a34af3b44a0625a2cf176b2ce4375a9260892ee4c38b1aaf7f141b3e"
+    "previewModeId": "ff8f787672b670552059eebf166f21a5",
+    "previewModeSigningKey": "353ecd5e74f7dc0eb8d232146b55a527245733aeaeee37e2126bcc6a95c3efec",
+    "previewModeEncryptionKey": "ad715aa4db8259f052877f21b3387a83897bc5b36c5a9aab253dd32cc4cda47d"
   }
 }

@@ -623,6 +623,24 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../app/api/auth/kakao/callback/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/auth/kakao/callback">> = Specific
+  const handler = {} as typeof import("../../app/api/auth/kakao/callback/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../app/api/auth/kakao/start/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/auth/kakao/start">> = Specific
+  const handler = {} as typeof import("../../app/api/auth/kakao/start/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../app/api/auth/logout/route.ts
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/auth/logout">> = Specific
