@@ -4,7 +4,7 @@ import {
   exchangeCodeForToken,
   fetchKakaoProfile,
   KAKAO_STATE_COOKIE,
-  loginErrorUrl,
+  loginErrorPath,
 } from "@/lib/kakao";
 import {
   createSessionToken,
@@ -17,7 +17,10 @@ import { isPastDue, purgeWithdrawnUser, formatKoreanDate } from "@/lib/account";
 /** GET /api/auth/kakao/callback?code=&state= */
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  const origin = url.origin;
+
+  // 프록시 뒤에서는 req.url 이 내부 주소로 잡히므로 상대경로로만 리다이렉트한다.
+  const redirectTo = (path: string) =>
+    new NextResponse(null, { status: 303, headers: { Location: path } });
 
   // state 대조 (쿠키에 "state|next" 로 저장해 둠)
   const cookieRaw = req.headers
@@ -34,8 +37,7 @@ export async function GET(req: Request) {
     return res;
   };
 
-  const fail = (msg: string) =>
-    clearState(NextResponse.redirect(loginErrorUrl(origin, msg, next)));
+  const fail = (msg: string) => clearState(redirectTo(loginErrorPath(msg, next)));
 
   try {
     if (url.searchParams.get("error")) {
@@ -112,7 +114,7 @@ export async function GET(req: Request) {
         name: user.name,
         phone: user.phone,
       });
-      const res = clearState(NextResponse.redirect(new URL(next, origin)));
+      const res = clearState(redirectTo(next));
       res.cookies.set(SESSION_COOKIE, token, sessionCookieOptions);
       return res;
     }
@@ -122,11 +124,9 @@ export async function GET(req: Request) {
       { t: "signup", phone: profile.phone, kakaoId: profile.kakaoId },
       600
     );
-    const to = new URL("/login", origin);
-    to.searchParams.set("kakaoSignup", signupToken);
-    if (profile.name) to.searchParams.set("kakaoName", profile.name);
-    to.searchParams.set("next", next);
-    return clearState(NextResponse.redirect(to.toString()));
+    const qs = new URLSearchParams({ kakaoSignup: signupToken, next });
+    if (profile.name) qs.set("kakaoName", profile.name);
+    return clearState(redirectTo(`/login?${qs.toString()}`));
   } catch (e) {
     console.error("[auth/kakao/callback]", e);
     return fail("로그인 처리 중 오류가 발생했습니다.");

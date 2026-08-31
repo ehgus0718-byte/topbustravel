@@ -83,10 +83,13 @@ export async function fetchKakaoProfile(accessToken: string): Promise<KakaoProfi
   };
 }
 
-/** 로그인 실패 시 되돌려보낼 주소 */
-export function loginErrorUrl(origin: string, message: string, next?: string) {
-  const u = new URL("/login", origin);
-  u.searchParams.set("kakaoError", message);
-  if (next && next.startsWith("/")) u.searchParams.set("next", next);
-  return u.toString();
+/**
+ * 로그인 실패 시 되돌려보낼 경로 (상대경로).
+ * 리버스 프록시 뒤에서는 req.url 이 내부 주소(localhost)로 잡히므로
+ * 절대주소를 만들지 않고 상대경로로만 리다이렉트한다.
+ */
+export function loginErrorPath(message: string, next?: string) {
+  const qs = new URLSearchParams({ kakaoError: message });
+  if (next && next.startsWith("/")) qs.set("next", next);
+  return `/login?${qs.toString()}`;
 }

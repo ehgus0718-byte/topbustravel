@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { kakaoConfig, KAKAO_STATE_COOKIE, loginErrorUrl } from "@/lib/kakao";
+import { kakaoConfig, KAKAO_STATE_COOKIE, loginErrorPath } from "@/lib/kakao";
 
 /** GET /api/auth/kakao/start?next=/my — 카카오 동의 화면으로 이동 */
 export async function GET(req: Request) {
@@ -10,9 +10,12 @@ export async function GET(req: Request) {
   const cfg = kakaoConfig();
   if (!cfg) {
     console.error("[kakao/start] 환경변수 누락");
-    return NextResponse.redirect(
-      loginErrorUrl(url.origin, "카카오 로그인이 아직 준비되지 않았습니다.", next)
-    );
+    return new NextResponse(null, {
+      status: 303,
+      headers: {
+        Location: loginErrorPath("카카오 로그인이 아직 준비되지 않았습니다.", next),
+      },
+    });
   }
 
   // CSRF 방지용 state — 쿠키에 담고 콜백에서 대조
