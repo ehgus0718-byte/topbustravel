@@ -100,6 +100,14 @@
       "namedRegex": "^/api/admin/reservations/(?<nxtPid>[^/]+?)(?:/)?$"
     },
     {
+      "page": "/api/admin/reservations/[id]/cancel",
+      "regex": "^/api/admin/reservations/([^/]+?)/cancel(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/admin/reservations/(?<nxtPid>[^/]+?)/cancel(?:/)?$"
+    },
+    {
       "page": "/api/admin/reservations/[id]/history",
       "regex": "^/api/admin/reservations/([^/]+?)/history(?:/)?$",
       "routeKeys": {
