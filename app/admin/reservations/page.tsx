@@ -17,6 +17,8 @@ const STATUS_BADGE: Record<string, string> = {
 const FIELD_LABEL: Record<string, string> = {
   customer_name: "성함",
   customer_phone: "휴대폰 번호",
+  payment_cancel: "카드 취소",
+  payment_cancel_unknown: "카드 취소(결과 미확인)",
 };
 
 type QuickFilter = "none" | "today" | "tomorrow" | "unpaid";
@@ -54,6 +56,14 @@ export default function AdminReservationsPage() {
   const [editPhone, setEditPhone] = useState("");
   const [editBusy, setEditBusy] = useState(false);
   const [histories, setHistories] = useState<Record<string, any[]>>({});
+
+  // ── 카드 취소·환불 (나이스페이 취소 API) ──
+  const [cancelId, setCancelId] = useState<string | null>(null);
+  const [cancelInfo, setCancelInfo] = useState<any>(null);
+  const [cancelAmt, setCancelAmt] = useState("");
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelSms, setCancelSms] = useState(true);
+  const [cancelBusy, setCancelBusy] = useState(false);
 
   const load = () => {
     const params = new URLSearchParams({ status });
@@ -129,6 +139,71 @@ export default function AdminReservationsPage() {
       alert("수정에 실패했습니다. 잠시 후 다시 시도해 주세요.");
     } finally {
       setEditBusy(false);
+    }
+  };
+
+  const openCancel = async (r: any) => {
+    setCancelId(r.id);
+    setCancelInfo(null);
+    setCancelReason("");
+    setCancelSms(true);
+    try {
+      const res = await fetch(`/api/admin/reservations/${r.id}/cancel`);
+      const d = await res.json();
+      if (!res.ok) {
+        alert(d.error ?? "취소 정보를 불러오지 못했습니다.");
+        setCancelId(null);
+        return;
+      }
+      setCancelInfo(d);
+      setCancelAmt(String(d.refund));
+    } catch {
+      alert("취소 정보를 불러오지 못했습니다.");
+      setCancelId(null);
+    }
+  };
+
+  const runCancel = async (r: any) => {
+    const amt = Number(cancelAmt.replace(/[^0-9]/g, ""));
+    if (!amt || amt < 1 || amt > r.total_amount) {
+      alert(`환불 금액은 1원 ~ ${won(r.total_amount)} 사이로 입력해 주세요.`);
+      return;
+    }
+    const fee = r.total_amount - amt;
+    const msg =
+      `${r.customer_name}님 예약을 카드 취소합니다.\n\n` +
+      `결제 ${won(r.total_amount)}\n` +
+      (fee > 0 ? `공제 ${won(fee)}\n` : "") +
+      `환불 ${won(amt)} (${fee > 0 ? "부분취소" : "전액취소"})\n\n` +
+      `카드 취소는 되돌릴 수 없습니다. 진행할까요?`;
+    if (!confirm(msg)) return;
+
+    setCancelBusy(true);
+    try {
+      const res = await fetch(`/api/admin/reservations/${r.id}/cancel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refundAmount: amt, sendSms: cancelSms, reason: cancelReason }),
+      });
+      const d = await res.json();
+      if (!res.ok) {
+        alert(d.error ?? "카드 취소에 실패했습니다.");
+      } else {
+        alert(
+          (d.warning ? `⚠️ ${d.warning}\n\n` : "카드 취소 완료\n") +
+            (d.summary ?? "") +
+            (cancelSms ? (d.smsSent ? "\n고객 안내 문자 발송됨" : "\n⚠️ 안내 문자 발송 실패") : "")
+        );
+        setCancelId(null);
+      }
+      load();
+      loadHistory(r.id);
+    } catch {
+      alert("응답을 받지 못했습니다. 나이스페이 상점관리자에서 취소 여부를 먼저 확인해 주세요.");
+      load();
+      loadHistory(r.id);
+    } finally {
+      setCancelBusy(false);
     }
   };
 
@@ -419,6 +494,97 @@ export default function AdminReservationsPage() {
                       >
                         📞 전화
                       </a>
+                      {["paid", "confirmed"].includes(r.status) &&
+                        r.payment_tid &&
+                        r.payment_method !== "bank" &&
+                        cancelId !== r.id && (
+                          <button
+                            onClick={() => openCancel(r)}
+                            className="rounded-lg border border-line px-3 py-2 text-[13px] font-semibold text-danger"
+                          >
+                            카드 취소
+                          </button>
+                        )}
+                    </div>
+                  )}
+
+                  {/* 카드 취소·환불 — 규정 기준 금액을 미리 채우고, 면제 사유 등은 금액 직접 수정 */}
+                  {cancelId === r.id && (
+                    <div className="mt-3 rounded-lg border border-line p-3">
+                      <p className="mb-2 text-[12px] font-bold text-sub">카드 취소 · 환불</p>
+                      {!cancelInfo ? (
+                        <p className="text-[12px] text-faint">불러오는 중...</p>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="rounded-lg bg-canvas p-2.5 text-[12px] text-sub">
+                            <p>
+                              출발일 {cancelInfo.departureDate ?? "-"} ·{" "}
+                              {cancelInfo.daysBefore >= 0
+                                ? `출발 ${cancelInfo.daysBefore}일 전`
+                                : "출발일 지남"}
+                            </p>
+                            <p className="mt-0.5">규정: {cancelInfo.rule}</p>
+                            <p className="mt-0.5">
+                              결제 {won(cancelInfo.total)} · 공제 {won(cancelInfo.fee)} →{" "}
+                              <span className="font-bold text-ink">환불 {won(cancelInfo.refund)}</span>
+                            </p>
+                          </div>
+                          <label className="block text-[12px] text-sub">
+                            환불 금액 (원)
+                            <input
+                              value={cancelAmt}
+                              onChange={(e) => setCancelAmt(e.target.value.replace(/[^0-9]/g, ""))}
+                              inputMode="numeric"
+                              className="mt-1 w-full rounded-lg border border-line px-3 py-2.5 text-[16px] outline-none focus:border-primary"
+                            />
+                          </label>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setCancelAmt(String(cancelInfo.refund))}
+                              className="rounded-lg border border-line px-3 py-1.5 text-[12px] font-semibold text-sub"
+                            >
+                              규정 금액
+                            </button>
+                            <button
+                              onClick={() => setCancelAmt(String(cancelInfo.total))}
+                              className="rounded-lg border border-line px-3 py-1.5 text-[12px] font-semibold text-sub"
+                            >
+                              전액 (면제 사유)
+                            </button>
+                          </div>
+                          <input
+                            value={cancelReason}
+                            onChange={(e) => setCancelReason(e.target.value)}
+                            placeholder="취소 사유 메모 (선택, 이력에만 기록)"
+                            maxLength={100}
+                            className="w-full rounded-lg border border-line px-3 py-2.5 text-[16px] outline-none focus:border-primary"
+                          />
+                          <label className="flex items-center gap-2 text-[12px] text-sub">
+                            <input
+                              type="checkbox"
+                              checked={cancelSms}
+                              onChange={(e) => setCancelSms(e.target.checked)}
+                            />
+                            고객에게 취소 안내 문자 발송
+                          </label>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => runCancel(r)}
+                              disabled={cancelBusy}
+                              className="flex-1 rounded-lg bg-danger py-2.5 text-[13px] font-bold text-white disabled:opacity-60"
+                            >
+                              {cancelBusy ? "처리 중..." : "카드 취소 실행"}
+                            </button>
+                            <button
+                              onClick={() => setCancelId(null)}
+                              disabled={cancelBusy}
+                              className="flex-1 rounded-lg border border-line py-2.5 text-[13px] font-semibold text-sub"
+                            >
+                              닫기
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                   {r.admin_note && (

@@ -50,3 +50,11 @@ export function buildFormBody(p: Record<string, string>): string {
     .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
     .join("&");
 }
+
+/** 취소 API (구모듈) — server to server */
+export const NICEPAY_CANCEL_URL = "https://pg-api.nicepay.co.kr/webapi/cancel_process.jsp";
+
+/** 취소용 SignData: sha256hex(MID + CancelAmt + EdiDate + 상점키) */
+export function buildCancelSign(cancelAmt: string, ediDate: string): string {
+  return sha256hex(NICEPAY_MID + cancelAmt + ediDate + NICEPAY_MERCHANT_KEY);
+}
