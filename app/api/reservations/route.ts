@@ -40,6 +40,11 @@ export async function POST(req: Request) {
     if (!departure_id || !customer_name || !customer_phone) {
       return NextResponse.json({ error: "필수 정보가 누락되었습니다." }, { status: 400 });
     }
+    // 인원은 0 이상의 정수만 허용 — 음수(예: 아동 -1)로 결제 금액을 낮추는 조작 차단
+    const isCount = (v: unknown) => Number.isInteger(v) && (v as number) >= 0 && (v as number) <= 99;
+    if (!isCount(adult_count) || !isCount(child_count) || !isCount(infant_count)) {
+      return NextResponse.json({ error: "인원 정보가 올바르지 않습니다." }, { status: 400 });
+    }
     if (adult_count < 1) {
       return NextResponse.json({ error: "성인 1명 이상 선택해 주세요." }, { status: 400 });
     }
@@ -76,6 +81,12 @@ export async function POST(req: Request) {
     const infantPrice = dep.infant_price ?? p.infant_price ?? 0;
     const total =
       adult_count * adultPrice + child_count * childPrice + infant_count * infantPrice;
+    if (!Number.isInteger(total) || total < 1) {
+      return NextResponse.json(
+        { error: "상품 가격이 설정되지 않아 예약할 수 없습니다. 고객센터로 문의해 주세요." },
+        { status: 409 }
+      );
+    }
 
     // 로그인 회원이면 회원 고유번호를 함께 저장한다.
     // (전화번호만으로 매칭하면 번호 변경 시 과거 예약이 마이페이지에서 사라짐)
